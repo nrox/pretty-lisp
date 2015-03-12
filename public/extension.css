@@ -1,0 +1,138 @@
+.prettycontainer {
+	font-family: "Monospace", "Courier New", "Dejavu Sans Mono", "Lucida Console", "Arial";
+	font-size: 15px;
+	color: #000000;
+        background-color: #a0b69a;
+	z-index: -999;
+        position: absolute;
+        padding-left: 50px;
+        width: 98%;
+}
+
+.list {
+ 	fill:white;
+	stroke:black;
+	stroke-width: 1px;
+	opacity:0.25;
+}
+
+.list:hover {
+	fill:#bbbbbb;
+}
+
+.mainrect {
+	fill: #eeeeee;
+	opacity: 1.0;
+}
+
+.atom {
+        fill:black;
+}
+
+.atom:hover {
+        font-weight: bolder;
+}
+
+.comment {
+	fill:#774444;
+}
+
+.hyperspec {
+	fill: #345678;
+}
+
+.keyword {
+        fill: #452356;
+}
+
+.nil {
+	fill: #992222;
+}
+
+.string {
+	fill: #336622;
+}
+
+.number {
+	fill: #882233;
+}
+
+.listdescriptor {
+	fill:black;
+}
+
+.elementmenu {
+	opacity: 0.0;
+	fill:orange;
+}
+
+.elementmenu:hover {
+        opacity: 0.3;
+}
+
+.pcodecontainer {
+	margin: 9px;
+}
+
+
+.atomsimilar {
+	fill: red;
+}
+
+.highlight {
+        fill: blue;
+}
+
+.highlight:hover {
+        font-weight: bolder;
+}
+
+.listclick {
+        fill: #cccccc;
+        stroke:black;
+        stroke-width: 3px;
+	opacity: 0.6;
+}
+
+.atomclick {
+	fill: red;
+}
+
+.atomclick:hover {
+        font-weight: bolder;
+}
+
+.atomparentclick {
+	fill: #cccccc;
+	stroke-width: 3px;
+	stroke: gray;
+	opacity: 0.6;
+}
+
+.listtypeclick {
+	fill: red;
+}
+
+.listclick2 {
+        fill: #888899;
+        stroke:black;
+        stroke-width: 2px;
+	opacity: 0.6;
+}
+
+.atomclick2 {
+        fill: #333355;
+}
+
+.atomclick2:hover {
+        font-weight: bolder;
+}
+
+.atomparentclick2 {
+        fill: #9999aa;
+	stroke: black;
+	stroke-width: 1px;
+        opacity: 0.4;
+}
+
+

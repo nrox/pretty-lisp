@@ -1,0 +1,334 @@
+#body {
+	font-family: "Monospace", "Courier New", "Dejavu Sans Mono", "Lucida Console", "Arial";
+	font-size: 15px;
+	color: #000000;
+        background-color: #a0b69a;
+	z-index: -999;
+}
+
+#topsubmenu, #bottomstatus, #topmenu, #bottommenucontainer, #hintscontainer, #curfileid, #leftmenucontainer, #debuggermenu  {
+ 	background-color: #444444;
+	opacity: 0.97;
+        position:fixed;
+        padding: 2px;
+        border: 1px solid black;
+        z-index:80;
+	font-size: 90%;
+        border-radius:5px;
+        -moz-border-radius:5px;
+}
+
+#debuggermenu {
+	top: 5px;
+	left: 5px;
+	display: none;
+}
+
+#tdmenu, #tbleftmmenu {
+	display: none;
+	
+}
+
+#topsubmenu, #bottommenucontainer {
+	z-index:90;
+}
+
+#topmenu {
+        top: 5px;
+        left: 5px;
+}
+
+#topsubmenu {
+        top:5px;
+        right:5px;
+        color: white;
+	padding: 3px;
+}
+
+#curfileid {
+        top : 40px;
+        right: 5px;
+        color:white;
+        font-weight:bold;
+}
+
+#bottomstatus {
+        top: 65px;
+        right: 5px;
+        color : white;
+        font-weight:bold;
+	max-width:35%;
+	max-height:35%;
+}
+
+#bottomstatus:hover {
+        color: lightgray;
+        cursor: pointer;
+}
+
+#leftmenucontainer {
+	bottom:5px;
+	left: 5px;
+}
+
+.alterkey {
+	font-size:80%;
+	color: #676767;
+}
+
+#hintscontainer {
+	right: 5px;
+	bottom: 5px;
+	color: white;
+	font-weight: bold;
+        max-width:40%;
+}
+
+#bottommenucontainer{
+	left:200px;
+	bottom:5px;
+}
+
+.separator {
+        display : none;
+        position: absolute;
+	z-index:-8;
+	padding-bottom: 500px;
+	padding-top: 80px;
+	padding-left: 180px;
+	padding-right: 300px;
+	
+}
+
+#container {
+	position: absolute;
+        margin : 10px;
+	width: 98%;
+	z-index: -99;
+}
+
+.sepbutton{
+	font-weight:bold;
+}
+
+.list {
+ 	fill:white;
+	stroke:black;
+	stroke-width: 1px;
+	opacity:0.3;
+}
+
+.list:hover {
+	fill: #cccccc;
+}
+
+.mainrect {
+	fill: #eeeeee;
+	opacity: 0.95;
+}
+
+.atom {
+        fill:black;
+}
+
+.atom:hover {
+        font-weight: bolder;
+}
+
+.comment {
+	/*fill:#774444;*/
+        fill:#775555;
+}
+
+.hyperspec {
+	fill: #345678;
+}
+
+.keyword {
+        fill: #452356;
+}
+
+.nil {
+	fill: #992222;
+}
+
+.string {
+	fill: #336622;
+}
+
+.number {
+	fill: #882233;
+}
+
+.listdescriptor {
+	fill:black;
+}
+
+.elementmenu {
+	opacity: 0.0;
+	fill:orange;
+}
+
+.elementmenu:hover {
+        opacity: 0.3;
+}
+
+
+#clickmenucontainer {
+	display: none;
+	position: absolute;
+	left: 0px;
+	top: 0px;
+}
+
+#filename, #curfolder {
+	width: 250px;
+	font-size: 110%;
+	font-family: "Courier New";
+}
+
+.fileoperation {
+	font-weight: bold;
+	width: 70px;
+}
+
+#tbhints {
+	display: none;
+}
+
+.hintbutton {
+        font-weight: bold;
+        width: 80px;
+}
+
+.hint-complete:hover, .menuitem:hover {
+	cursor: pointer;
+	color:  #a0b69a;	
+}
+
+#menutext, .menutextatom, .menutextlist {
+	coolor: white;
+        margin: 5px;
+        border: 1px solid black;
+        background-color: black;
+        border-radius:5px;
+        opacity: 1.0;
+}
+
+#hinttxt {
+	width: 240px;
+	font-size: 150%;
+	height: 80px;
+        border: 1px solid black;
+	color: white;
+        background-color: black;
+	border-radius: 5px;
+}
+
+
+.transferhint, #tgtelement, .hidemenubutton, #tohint {
+	font-weight: bold;
+	height: 40px;
+	width: 50px;
+	margin: 0px;
+}
+
+#curhint {
+	color: black;
+}
+
+#fileslist {
+        font-weight: bold;
+	text-align: left;
+	border-radius: 5px;
+}
+
+.pcodecontainer {
+	margin: 9px;
+}
+
+
+.atomsimilar {
+	fill: #f00f0f;
+}
+
+#menutext {
+	width: 600px;
+	height: 120px;
+}
+
+.menutextatom {
+    font-size: 150%;
+    color: white;
+}
+
+.menutextlist {
+    font-size: 300%;
+    color: red;
+}
+
+
+.menuitem {
+	vertical-align:top;
+	color: white;
+	margin: 5px;
+	font-size: 110%;
+}
+
+.highlight {
+        fill: #0f0fff;
+}
+
+.highlight:hover {
+        font-weight: bolder;
+}
+
+.listclick {
+        fill: #cccccc;
+        stroke:black;
+        stroke-width: 3px;
+	opacity: 0.6;
+}
+
+.atomclick {
+	fill: red;
+}
+
+.atomclick:hover {
+        font-weight: bolder;
+}
+
+.atomparentclick {
+	fill: #cccccc;
+	stroke-width: 3px;
+	stroke: gray;
+	opacity: 0.6;
+}
+
+.listtypeclick {
+	fill: red;
+}
+
+.listclick2 {
+        fill: #888899;
+        stroke:black;
+        stroke-width: 2px;
+	opacity: 0.6;
+}
+
+.atomclick2 {
+        fill: #333355;
+}
+
+.atomclick2:hover {
+        font-weight: bolder;
+}
+
+.atomparentclick2 {
+        fill: #9999aa;
+	stroke: black;
+	stroke-width: 1px;
+        opacity: 0.4;
+}
+
+
