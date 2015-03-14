@@ -26,6 +26,9 @@ In SBCL terminal, copy paste this line and press enter
 
 	(pretty-lisp:run :port 4555)
 
+	#alternative
+	sbcl --load package.lisp --eval "( pretty-lisp:run :port 4555)"
+
 Then use Chrome and navigate to
 
 	http://localhost:4555
