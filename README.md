@@ -12,7 +12,13 @@ Some features are broken.
 
 ## Getting started
 
-Usage example with SBCL, quicklisp on Linux Ubuntu
+Usage example with SBCL, quicklisp, Chrome, on Linux Ubuntu
+
+### In one go
+
+        google-chrome "http://localhost:4555" && sbcl --load package.lisp --eval "( pretty-lisp:run :port 4555)"
+
+### Step by step
 
 Get into the repository
 
@@ -25,9 +31,6 @@ Load the package
 In SBCL terminal, copy paste this line and press enter
 
 	(pretty-lisp:run :port 4555)
-
-	#alternative
-	sbcl --load package.lisp --eval "( pretty-lisp:run :port 4555)"
 
 Then use Chrome and navigate to
 
