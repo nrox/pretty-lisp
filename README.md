@@ -6,6 +6,8 @@ Programming toy to edit Common Lisp code in the browser, where parenthesis are t
 
 [pretty-lisp demo](https://assemblino.com/pretty-lisp/)
 
+Open tutorial.lisp or other *.lisp files available.
+
 ## Current state
 
 Tested on Linux with SBCL, probably runs with other implementations. Might run on Mac OS as well. 
