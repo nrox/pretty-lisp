@@ -1,11 +1,45 @@
 /**
-* Pretty-lisp
-* Javascript interface functions
-* Nuno Rox August 2011
+pretty-LISP Editor (beta)
+ 
+Copyright (c) 2012, Nuno Rocha.  All rights reserved.
+
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions
+ are met:
+
+   * Redistributions of source code must retain the above copyright
+     notice, this list of conditions and the following disclaimer.
+
+   * Redistributions in binary form must reproduce the above
+     copyright notice, this list of conditions and the following
+     disclaimer in the documentation and/or other materials
+     provided with the distribution.
+
+ THIS SOFTWARE IS PROVIDED BY THE AUTHOR 'AS IS' AND ANY EXPRESSED
+ OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+ DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+ GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+*/
+
+/** dependencies 
+  var REQUESTS_TAG
+  function waitSignal
+  function updateTitle
+  function goToElement
+  function roxEvent;
+
 */
 
 /** single xml requests are send to this post uri */
- var REQUEST_XML_URL = "/ExchangeXML"; 
+var REQUEST_XML_URL = "/ExchangeXML"; 
 
 var ALLOW_DEBUG = true; 
 function alertError (msg) {
@@ -81,7 +115,7 @@ function evalXmlResponse (xmlDoc) {
 					par += childValue;
                                	}
                                 var JQUERY_0 = ["remove", "empty"];
-				var JQUERY_1 = ["after", "before", "prepend", "html", "val", "replaceWith"];
+				var JQUERY_1 = ["after", "before", "prepend", "html", "val", "replaceWith", "append"];
                                 var JQUERY_2 = ["attr", "css"];
                                 if ( JQUERY_0.indexOf(met) > -1 ) {
                                         $(sel)[met]();
@@ -103,7 +137,7 @@ function evalXmlResponse (xmlDoc) {
 					}
                                 }
                                 var CUSTOM_0 = {"updateTitle": updateTitle};
-                                var CUSTOM_1 = {"alert": alert, "goToElement": goToElement};
+                                var CUSTOM_1 = {"alert": alert, "goToElement": goToElement, "showServerMessage": showServerMessage};
                                 var CUSTOM_2 = {"roxEvent": roxEvent, "window.open": window.open};
                                 if ( CUSTOM_0[met] !== undefined ) {
                                 	CUSTOM_0[met]();
@@ -144,32 +178,73 @@ function httpXmlRequest(){
 		if ( req.status==200) {
 			evalXmlResponse(req.responseXML);
 		} else {
-			alertError ("Request to server failed.");
+			waitSignal(false);
+			var showMessage = confirm ("Request to server failed: status " + req.status + "\n\n" + "Display server messages?");
+			if (showMessage){
+				sendRequestToServer("message", $("<dummy />").get(0), "irequest");
+			}
 		}
         } 
     }
     return req;
+
 }
+
+/*
+var isChrome = navigator.userAgent.indexOf("hrome") > -1;
+function browserCheck(alertWarning) {
+	if (true) { 
+		return true;
+	}
+	if (!isChrome){
+		if (alertWarning==true) {
+                	alert("The current version of pretty-LISP works properly \n\nonly with Google Chrome.");
+		}
+                return false;
+        }
+	return true;
+}
+*/
 
 var reqObMemo;
 var reqDataMemo;
 
-function sendRequestToServer (fname, domElement) {
+function sendRequestToServer (fname, domElement, reqTag) {
 	//remove old xml request from the dom (!?)
-        $("mprequest").remove();
+	if (reqTag===undefined) {
+		reqTag = REQUESTS_TAG;
+	}
+        $(reqTag).remove();
         //builds the xml request with the event element, wich is sent also with the request
-	var xmlStr = "<irequest>";
+	var xmlStr = "<" + reqTag + ">";
 	xmlStr += "<" + fname + ">";
 	xmlStr += xmlToString(domElement);
 	xmlStr += "</" + fname + ">";
-	xmlStr += "</irequest>";
+	xmlStr += "</" + reqTag + ">";
 	//send the request
         var req = httpXmlRequest();        
 	req.open("POST", REQUEST_XML_URL, false);
-        req.setRequestHeader("Content-type","text/xml");
+        req.setRequestHeader("Content-type", "text/xml");
 	//the request must be scheduled with timeout: need to update page with waitSignal before.
 	reqObMemo = req;
 	reqDataMemo = xmlStr;
         waitSignal(true);
         setTimeout("reqObMemo.send(reqDataMemo); waitSignal(false)", 0);
 } 
+
+
+function escapeMarkup(str) {
+  str = str.replace(/&/g, "&amp;");
+  str = str.replace(/>/g, "&gt;");
+  str = str.replace(/</g, "&lt;");
+  str = str.replace(/"/g, "&quot;");
+  str = str.replace(/'/g, "&#039;");
+  return str;
+}
+
+function showServerMessage(message) {
+        message = "<p><pre>" + escapeMarkup(message) + "</pre></p>";
+        var button = "<p><button style='width: 100%; height: 45px;' onclick='$(\"#bottomstatus\").empty();'>x<br />close</button></p>"
+        $("#bottomstatus").html(button + message);
+}
+

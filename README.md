@@ -16,7 +16,7 @@ Usage example with SBCL, quicklisp, Chrome, on Linux Ubuntu
 
 ### In one go
 
-        google-chrome "http://localhost:4555" && sbcl --load package.lisp --eval "( pretty-lisp:run :port 4555)"
+        google-chrome "http://localhost:4555" && sbcl --load package.lisp --eval "( pretty-lisp:up :port 4555)"
 
 ### Step by step
 
@@ -30,7 +30,7 @@ Load the package
 
 In SBCL terminal, copy paste this line and press enter
 
-	(pretty-lisp:run :port 4555)
+	(pretty-lisp:up :port 4555)
 
 Then use Chrome and navigate to
 
@@ -38,4 +38,4 @@ Then use Chrome and navigate to
 
 ## Usage
 
-_TODO_ 
+In folder docs/ open tutorial.lisp or the files concerning a small presentation given at a Lispers meetup in Berlin.

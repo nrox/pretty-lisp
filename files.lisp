@@ -1,74 +1,87 @@
 
 
-;;; pretty-LISP - Common LISP Editor 
+;;; pretty-LISP Editor (beta) 
 
+#|
+ Copyright (c) 2012, Nuno Rocha.  All rights reserved.
 
-;;;   Nuno Rocha 2012 
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions
+ are met:
 
+   * Redistributions of source code must retain the above copyright
+     notice, this list of conditions and the following disclaimer.
+
+   * Redistributions in binary form must reproduce the above
+     copyright notice, this list of conditions and the following
+     disclaimer in the documentation and/or other materials
+     provided with the distribution.
+
+ THIS SOFTWARE IS PROVIDED BY THE AUTHOR 'AS IS' AND ANY EXPRESSED
+ OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+ DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+ GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+|# 
 
 ( in-package :pretty-lisp )
-
-
-( defvar +allowed-file-operations+
-  '( :browse :open :openall :load :new :save :saveall :saveas :close :closeall )
-  "If the operation is not in this list it will not be processed." )
-
 
 ( defparameter *use-pprint*
   t
   "If the customized pprint should be used when saving files." )
 
-
-( defvar *EDITING-FILES* nil "Files currently being edit are kept here." )
-
-
 ( defparameter +MAX-UNDO+ 50 "Maximum of undo operations." )
 
-
-( defvar *DEFAULT-FOLDER* +source-folder+ "The initial browsing path." )
-
+( defvar *DEFAULT-FOLDER*
+  ( concatenate 'string +source-folder+ "temp/" )
+  "The initial browsing path." )
 
 ( defparameter +AUTO-SAVE-COUNTER+
   0
   "Counts the number of editing operations since last backup copy." )
 
-
 ( defparameter +AUTO-SAVE-LIMIT+
   15
   "After this number of editing operations there is an automatic backup copy." )
 
-
 ( defparameter +TAG-CONT+ "div" )
-
 
 ( defvar +BK-DIR+
   ( concatenate 'string +source-folder+ "backups/" )
   "Editing files are periodically saved to this folder." )
 
+( defun default-folder ( &optional path )
+  ( let ( ( name ( format nil "~A~A" +BK-DIR+ "deffolder.txt" ) ) )
+    ( cond ( path ( write-to-file name path ) )
+          ( ( probe-file name ) ( read-file name ) )
+          ( t ( write-to-file name *DEFAULT-FOLDER* ) *DEFAULT-FOLDER* ) ) ) )
+
+( setf *DEFAULT-FOLDER* ( default-folder ) )
 
 ( defmethod xml-to-code-string ( ( xml pretty-list ) )
-           ( let ( ( children-code
-                  ( mapcar #'xml-to-code-string ( xml-children xml ) ) ) )
-             ( concatenate 'string ( xml-attribute-get xml +LIST-TYPE+ ) "("
-                          ( apply #'concatenate ( push 'string children-code ) )
-                          ")" ) ) )
-
+  ( let ( ( children-code ( mapcar #'xml-to-code-string ( xml-children xml ) ) ) )
+    ( concatenate 'string ( xml-attribute-get xml +LIST-TYPE+ ) "("
+                 ( apply #'concatenate ( push 'string children-code ) ) ")" ) ) )
 
 ( defmethod xml-to-code-string ( ( xml pretty-atom ) )
-           ( let*
-            ( ( val ( xml-value xml ) )
-             ( newline
-              ( or
-               ( and ( > ( length val ) 0 ) ( eq #\; ( char val 0 ) )
-                    ( coerce '( #\Newline ) 'string ) )
-               " " ) ) )
-            ( concatenate 'string val newline ) ) )
-
+  ( let*
+   ( ( val ( xml-value xml ) )
+    ( newline
+     ( or
+      ( and ( > ( length val ) 0 ) ( eq #\; ( char val 0 ) )
+           ( coerce '( #\Newline ) 'string ) )
+      " " ) ) )
+   ( concatenate 'string val newline ) ) )
 
 ( ;; DELETEME
    defun make-top-menu ( )
  ( string-to-xml "<appendchildren tgt='topmenu'><b>ola</b></appendchildren>" ) )
-
 
 ( defclass pfile-manager ( )
           ( ( name :accessor pfile-name :initarg :name )
@@ -80,12 +93,12 @@
            ( focus :accessor pfile-focus :initform nil )
            ( pointer :accessor pfile-pointer :initform 0 ) ) )
 
-
 ( ;; FIXME
-   progn ( defgeneric pfile-manager-p ( obj ) )
+   progn
+ ( defgeneric pfile-manager-p
+     ( obj ) )
  ( defmethod pfile-manager-p ( ( obj pfile-manager ) ) t )
  ( defmethod pfile-manager-p ( obj ) ) )
-
 
 ( defun roxid-pfile ( roxid )
   
@@ -94,10 +107,8 @@
     ( dolist ( file *EDITING-FILES* nil )
       ( when ( find-by-attribute ( pfile-xml file ) :roxid roxid ) ( return file ) ) ) ) )
 
-
 ( defun pfile-current-focus ( pfile )
   ( nth ( pfile-pointer pfile ) ( pfile-focus-history pfile ) ) )
-
 
 ( defun pfile-undo-redo ( pfile direction &optional update )
   "Replaces the current list of nodes with a
@@ -105,7 +116,9 @@
   ( let ( ( pointer ( pfile-pointer pfile ) ) ( history ( pfile-history pfile ) ) )
     
     ;; undo or redo changes the pointer to the history item
-     ( if ( string-equal direction :undo ) ( incf pointer ) ( decf pointer ) )
+     ( if ( string-equal direction :undo )
+        ( incf pointer )
+        ( decf pointer ) )
     
     ;; check pointer upper boundary
      ( when ( > pointer ( - ( length history ) 1 ) )
@@ -118,16 +131,17 @@
      ( setf ( pfile-pointer pfile ) pointer )
     
     ;; if update the current nodes, update it, else just return the new nodes
-     ( if update ( setf ( pfile-xml pfile ) ( copy-list ( nth pointer history ) ) )
+     ( if update
+        ( setf ( pfile-xml pfile ) ( copy-list ( nth pointer history ) ) )
         ( copy-list ( nth pointer history ) ) ) ) )
 
-
-( defgeneric pfile-pprint ( pfile &optional to-other-path ) )
-
+( defgeneric pfile-pprint
+    ( pfile &optional to-other-path ) )
 
 ( defun pfile-save ( pfile )
   "Save the pretty nodes to a file, after converting them to text code."
-  ( if *use-pprint* ( pfile-pprint pfile )
+  ( if *use-pprint*
+      ( pfile-pprint pfile )
       ( let ( ( nodes ( pfile-xml pfile ) ) ( path ( pfile-path pfile ) ) ( str nil ) )
         
         ;; FIXME use reduce
@@ -142,29 +156,29 @@
                                ( xml-to-code-string node ) ) ) )
         ( write-to-file path str ) ) ) )
 
-
 ( defun pfile-backup ( pfile )
   "Backup of a text code file. Used before saving, as precaution."
-  ( let*
-   ( ( path ( pfile-path pfile ) ) ( name ( pfile-name pfile ) )
-    ( bk-path ( format nil "~Abackup_~A" +BK-DIR+ name ) ) )
-   ( when ( probe-file path ) ( write-to-file bk-path ( read-file path ) ) ) ) )
-
+  ( if *backup-files*
+      ( let*
+       ( ( path ( pfile-path pfile ) ) ( name ( pfile-name pfile ) )
+        ( bk-path ( format nil "~Abackup_~A" +BK-DIR+ name ) ) )
+       ( when ( probe-file path ) ( write-to-file bk-path ( read-file path ) ) ) ) ) )
 
 ( defun pfile-auto-save ( pfile )
   "After some number of editing operations this function is calles to make
 an automatic backup copy of the pretty code, saved in text format."
-  ( when ( > ( incf +AUTO-SAVE-COUNTER+ ) +AUTO-SAVE-LIMIT+ )
-    ( setf +AUTO-SAVE-COUNTER+ 0 )
-    ( let*
-     ( ( nodes ( pfile-xml pfile ) ) ( name ( pfile-name pfile ) ) ( str nil )
-      ( bk-path ( format nil "~Aautosave_~A" +BK-DIR+ name ) ) )
-     ( dolist ( node nodes nil )
-       ( setf str
-               ( concatenate 'string str ( coerce '( #\Newline #\Newline ) 'string )
-                            ( xml-to-code-string node ) ) ) )
-     ( write-to-file bk-path str ) ) ) )
-
+  ( if *autosave-files*
+      ( when ( > ( incf +AUTO-SAVE-COUNTER+ ) +AUTO-SAVE-LIMIT+ )
+        ( setf +AUTO-SAVE-COUNTER+ 0 )
+        ( let*
+         ( ( nodes ( pfile-xml pfile ) ) ( name ( pfile-name pfile ) ) ( str nil )
+          ( bk-path ( format nil "~Aautosave_~A" +BK-DIR+ name ) ) )
+         ( dolist ( node nodes nil )
+           ( setf str
+                   ( concatenate 'string str
+                                ( coerce '( #\Newline #\Newline ) 'string )
+                                ( xml-to-code-string node ) ) ) )
+         ( write-to-file bk-path str ) ) ) ) )
 
 ( defun copy-state ( xml )
   "Make a copy of the list of actual nodes being edited
@@ -174,10 +188,14 @@ This function is called before any editing operations."
    ( ( svg ( car ( xml-children xml ) ) )
     ( operation ( xml-attribute-get svg :operation ) )
     ( roxid ( xml-attribute-get svg :roxid ) ) ( pfile ( roxid-pfile roxid ) )
+    ( dummy
+     ( if ( null pfile )
+         ( return-from copy-state nil ) ) )
     ( current ( copy-list ( pfile-xml pfile ) ) )
     ( element-that-will-change
      ( find-ancestor ( find-by-attribute current :roxid roxid ) ) )
     ( copy nil ) )
+   ( declare ( ignore dummy ) )
    ( when 
      ;; only these operations are relevant
       ( find operation
@@ -191,14 +209,15 @@ This function is called before any editing operations."
                 
                 ;; only the top level node that will be changed
                 ;; needs to be copied
-                 ( if ( eq element-that-will-change node ) ( xml-copy node ) node ) )
+                 ( if ( eq element-that-will-change node )
+                    ( xml-copy node )
+                    node ) )
               current ) )
      
      
      ;; what will be edited later is the copy
      ;; and the node that will be edited is kept intact in history
       ( setf ( pfile-xml pfile ) copy ) ) ) )
-
 
 ( defun pfile-update-current-nodes
        ( pfile current focus &optional ( operation :update ) )
@@ -240,23 +259,25 @@ This function is called before any editing operations."
       ;; process auto-saving (if needed)
        ( pfile-auto-save pfile ) ) ) )
 
+( defgeneric process-dimensioning
+    ( xml ) )
 
-( defgeneric process-dimensioning ( xml ) )
+( defgeneric xml-node-to-pretty-node
+    ( xml &optional parent ) )
 
+( defgeneric wrap-with-root-svg
+    ( xml ) )
 
-( defgeneric xml-node-to-pretty-node ( xml &optional parent ) )
-
-
-( defgeneric wrap-with-root-svg ( xml ) )
-
-
-( defgeneric set-id-all-family ( str &optional overwrite ) )
-
+( defgeneric set-id-all-family
+    ( str &optional overwrite ) )
 
 ( defun update-editing-nodes-in-browser ( xml-ret pfile new-editing-nodes )
   "makes a list of instructions to update the editing file in browser"
   ( let ( ( old-editing-nodes ( copy-list ( pfile-xml pfile ) ) )
-        ( actions ( wrap ( if xml-ret ( list xml-ret ) ) ) ) )
+        ( actions
+         ( wrap
+          ( if xml-ret
+              ( list xml-ret ) ) ) ) )
     
     ;; remove the nodes that were deleted or updated
      ( dolist ( root-node ( copy-list old-editing-nodes ) )
@@ -277,8 +298,7 @@ This function is called before any editing operations."
          ( when ( member root-node old-editing-nodes )
           ( setf reference
                   ( format nil "#p~A" ( xml-attribute-get root-node :roxid ) )
-                jmethod
-                  "after" ) )
+                jmethod "after" ) )
        
         ;; when its is a new root member, create containers and svg
          ( unless ( member root-node old-editing-nodes )
@@ -307,26 +327,41 @@ This function is called before any editing operations."
            ( setf reference
                   ( concatenate 'string "#p"
                                ( xml-attribute-get root-node :roxid ) )
-                jmethod
-                  "after" ) ) ) )
+                jmethod "after" ) ) ) )
     actions ) )
-
 
 ( defun pfile-open ( filepath )
   "Takes the file and returns a pretty version of it: a list of pretty-lists and pretty-nodes."
   ( block nil
-    ( let ( ( edit-nodes )
-          ( rox-xml ( ignore-errors ( code-string-to-xml ( read-file filepath ) ) ) ) )
-      ( when ( null rox-xml ) ( return nil ) )
-      ( dolist ( svg ( if ( consp rox-xml ) rox-xml ( xml-children rox-xml ) ) nil )
-        ( setf ( xml-parent svg ) nil )
-        ( setf svg ( xml-node-to-pretty-node svg ) )
-        ( setf svg ( process-dimensioning svg ) )
-        ( push svg edit-nodes ) )
-      ( reverse edit-nodes ) ) ) )
-
+    ( let*
+     ( ( edit-nodes ) ( file-text ( read-file filepath ) )
+      ( rox-xml
+       ( ignore-errors
+        ( code-string-to-xml
+         ( or
+          ( and
+           ( >
+            ( length
+             ( string-trim ( coerce '( #\Newline #\Space ) 'string ) file-text ) )
+            0 )
+           file-text )
+          "#| file was empty |#" ) ) ) ) )
+     ( when ( null rox-xml ) ( return nil ) )
+     ( dolist
+         ( svg
+          ( if ( consp rox-xml )
+              rox-xml
+              ( xml-children rox-xml ) )
+          nil )
+       ( setf ( xml-parent svg ) nil )
+       ( setf svg ( xml-node-to-pretty-node svg ) )
+       ( setf svg ( process-dimensioning svg ) )
+       ( push svg edit-nodes ) )
+     ( reverse edit-nodes ) ) ) )
 
 ( defun cur-paths-options ( path )
+  ( if *multi-user-demo*
+      ( setf path *DEFAULT-FOLDER* ) )
   ( let*
    ( ( cur-files ( sort ( mapcar #'pfile-path *EDITING-FILES* ) #'string< ) )
     ( cur-pathname ( pathname path ) )
@@ -347,13 +382,12 @@ This function is called before any editing operations."
         :children ( list f ) ) )
      cur-files ) ) ) )
 
-
 ( defun topsubmenu ( xml )
   ( declare ( ignore xml ) )
   ( let ( ( file-operations '( ) ) )
     ( dolist
         ( operation
-         '( "browse" "open" "load" "new" "save" "saveas" "close" "closeAll"
+         '( "browse" "open" "load" "new" "save" "saveAs" "close" "closeAll"
           "saveAll" "openAll" )
          nil )
       ( push
@@ -363,9 +397,8 @@ This function is called before any editing operations."
         :children ( list operation ) )
        file-operations ) )
     ( setf file-operations ( reverse file-operations ) )
-    ( jquery-1 "#topsubmenu" "html" "paths:"
-     ( cur-paths-options *DEFAULT-FOLDER* ) file-operations ) ) )
-
+    ( jquery-1 "#topsubmenu" "html" ( cur-paths-options *DEFAULT-FOLDER* )
+     file-operations ) ) )
 
 ( defun prettyfile ( xmlreq )
   "This functions is used to help processing file operations (open, new)
@@ -396,7 +429,6 @@ Takes the xml request to get the filename from it"
         ( list ( cons "id" "nodescontainer" ) ) ) ) ) )
     pfile ( xml-copy nodes-list ) ) ) )
 
-
 ( defun open-all ( folder-path &key ( extensions '( "lisp" "cl" ) ) )
   ( let ( ( paths
          ( mapcar #'namestring
@@ -410,7 +442,8 @@ Takes the xml request to get the filename from it"
     ( mapcar
      #'( lambda ( pretty path )
        ( wrap
-        ( list pretty ( jquery-1 "#curfileid" "html" path ) 
+        ( list pretty ( jquery-1 "#curfileid" "html" path )
+              ( jquery-1 "title" "html" ( file-namestring ( pathname path ) ) ) 
               ;; this might be removed
                ( js-predefined "roxEvent"
                ( xml-attribute-get
@@ -432,7 +465,6 @@ Takes the xml request to get the filename from it"
       paths )
      paths ) ) )
 
-
 ( defun fileoperation ( xml )
   "This function is always called for editing operations.
 The first child of the xml is the associated html  menu button"
@@ -448,12 +480,21 @@ The first child of the xml is the associated html  menu button"
    ;; if the operation is not allowed return
     ( unless ( find operation +allowed-file-operations+ :test #'string-equal )
      ( return-from fileoperation
-      ( jquery-1 "#bottomstatus" "html" operation ": not allowed" ) ) )
+      ( jquery-1 "#bottomstatus" "html" operation
+       ": disabled for this session!" ) ) )
+   ( when
+       ( and ( not pfile )
+            ( find operation '( :save :close :saveAs ) :test #'string-equal ) )
+     ( return-from fileoperation
+      ( jquery-1 "#bottomstatus" "html" operation
+       ": Impossible to process file command. Was file closed? Multiple tabs for same file?" ) ) )
    ( when ( string-equal operation :openall )
-     ( setf ret ( first ( open-all newfile ) ) ) )
+     ( setf ret ( first ( open-all newfile ) ) )
+     ( if ret
+         ( setf newfile ( pfile-path ( car ( last *EDITING-FILES* ) ) ) ) ) )
    ( when ( string-equal operation :open )
      ( setf path newfile )
-     ( if ( and ( probe-file path ) ( not ( is-directory path ) ) )
+     ( if ( and ( probe-file path ) ( not ( directory-exists-p path ) ) )
          ( setf ret
                  ( wrap
                   ( list ( prettyfile xml ) ( jquery-1 "#curfileid" "html" path ) 
@@ -503,7 +544,8 @@ The first child of the xml is the associated html  menu button"
      ( setf ret
              ( wrap
               ( list ( jquery-0 "#idlispide" "empty" )
-                    ( jquery-0 "#curfileid" "empty" ) ) ) ) )
+                    ( jquery-0 "#curfileid" "empty" )
+                    ( jquery-1 "title" "html" "pretty-LISP Editor" ) ) ) ) )
    ( when ( string-equal operation :closeall )
      ( setf +AUTO-SAVE-COUNTER+ +AUTO-SAVE-LIMIT+ )
      ( mapcar #'pfile-auto-save *EDITING-FILES* )
@@ -526,7 +568,8 @@ The first child of the xml is the associated html  menu button"
    ;; the save family
     ( when ( find operation '( :save :saveas :saveall ) :test #'string-equal )
      ( mapcar #'( lambda ( pf ) ( pfile-backup pf ) ( pfile-save pf ) )
-             ( if ( string-equal operation :saveall ) *EDITING-FILES*
+             ( if ( string-equal operation :saveall )
+                 *EDITING-FILES*
                  ( list pfile ) ) ) )
    
    ;; show files in folder and folder structure
@@ -535,7 +578,11 @@ The first child of the xml is the associated html  menu button"
    
    ;; on all file operations update paths list
     ( progn
-    ( setf *DEFAULT-FOLDER* ( directory-namestring ( pathname newfile ) ) )
+    ( unless *multi-user-demo*
+      ( setf *DEFAULT-FOLDER* ( directory-namestring ( pathname newfile ) ) )
+      
+      ;; save to disk
+       ( default-folder *DEFAULT-FOLDER* ) )
     ( setf ret
             ( wrap
              ( list ret

@@ -1,38 +1,27 @@
 #body {
-	font-family: "Monospace";
-	font-size: 12px;
+	font-family: "Monospace", "Courier New", "Dejavu Sans Mono", "Lucida Console", "Arial";
+	font-size: 15px;
 	color: #000000;
-        background-color: #839496; /* #eee8d5*/ /* #a0b69a*/ /* #93a1a1*/ /*#a0b69a*/
+        background-color: #a0b69a;
 	z-index: -999;
-}
-
-table {
-	border-collapse:collapse;
-}
-
-button {
-	margin: 1px;
 }
 
 #topsubmenu, #bottomstatus, #topmenu, #bottommenucontainer, #hintscontainer, #curfileid, #leftmenucontainer, #debuggermenu  {
  	background-color: #444444;
 	opacity: 0.97;
         position:fixed;
-        padding: 1px;
+        padding: 2px;
         border: 1px solid black;
         z-index:80;
 	font-size: 90%;
         border-radius:5px;
+        -moz-border-radius:5px;
 }
 
 #debuggermenu {
 	top: 5px;
 	left: 5px;
 	display: none;
-}
-
-#tdmenu, #tbleftmmenu {
-	display: none;	
 }
 
 #topsubmenu, #bottommenucontainer {
@@ -48,24 +37,6 @@ button {
         top:5px;
         right:5px;
         color: white;
-	padding-right: 3px;
-}
-
-#copyright {
-	display: none;
-	position: fixed;
-	top: 60px;
-	left: 8px;
-	font-size: 50%;
-	color: gray;
-}
-
-#ready {
-	color:white;
-}
-
-#ready:hover {
-	cursor: pointer;
 }
 
 #curfileid {
@@ -80,9 +51,13 @@ button {
         right: 5px;
         color : white;
         font-weight:bold;
-	max-width:50%;
-	max-height:50%;
-        overflow: auto; 
+	max-width:35%;
+	max-height:35%;
+}
+
+#bottomstatus:hover {
+        color: lightgray;
+        cursor: pointer;
 }
 
 #leftmenucontainer {
@@ -90,25 +65,17 @@ button {
 	left: 5px;
 }
 
-
 #hintscontainer {
 	right: 5px;
 	bottom: 5px;
 	color: white;
 	font-weight: bold;
-        /*max-width:350px;*/
-}
-
-#hintslist {
-	overflow: auto; 
-	max-width: 350px; 
-	max-height: 300px; 
+        max-width:40%;
 }
 
 #bottommenucontainer{
 	left:200px;
 	bottom:5px;
-	padding: 2px;
 }
 
 .separator {
@@ -117,7 +84,7 @@ button {
 	z-index:-8;
 	padding-bottom: 500px;
 	padding-top: 80px;
-	padding-left: 120px;
+	padding-left: 180px;
 	padding-right: 300px;
 	
 }
@@ -134,19 +101,19 @@ button {
 }
 
 .list {
- 	fill: #fdfdfd;
+ 	fill:white;
 	stroke:black;
 	stroke-width: 1px;
-	opacity:0.3;
+	opacity:0.25;
 }
 
 .list:hover {
-	fill: #cccccc;
+	fill:#bbbbbb;
 }
 
 .mainrect {
-	fill: #f5f5f5;
-	opacity: 0.9;
+	fill: #eeeeee;
+	opacity: 1.0;
 }
 
 .atom {
@@ -205,11 +172,12 @@ button {
 
 #filename, #curfolder {
 	width: 250px;
+	font-size: 110%;
+	font-family: "Courier New";
 }
 
 .fileoperation {
 	font-weight: bold;
-	font-size: 100%;
 	width: 60px;
 }
 
@@ -219,102 +187,75 @@ button {
 
 .hintbutton {
         font-weight: bold;
-	font-size: 100%;
         width: 80px;
-}
-
-.hint-complete {
-	white-space: nowrap;
 }
 
 .hint-complete:hover, .menuitem:hover {
 	cursor: pointer;
-	color: #a0b69a;	
-}
-
-
-#menutext {
-	font-size: 150%;
-        border: 1px solid black;
-        background-color: black;
-        border-radius:5px;
-        opacity: 0.90;
-        width: 98%;
-        height: 110px;
-	min-width: 600px;
-	margin: 1px;
+	color:  #a0b69a;	
 }
 
 #hinttxt {
 	width: 240px;
-	font-size: 135%;
-	height: 60px;
-        border: 1px solid black;
-	color: white;
-        background-color: black;
-	border-radius: 5px;
-	margin-left: 3px;
-        margin-right: 3px;
+	font-size: 150%;
+	height: 80px;
 }
 
-
-.transferhint, #tgtelement, .hidemenubutton, #tohint {
+.transferhint, #tgtelement, .hydemenubutton, #tohint {
 	font-weight: bold;
-	font-size: 100%;
-	height: 37px;
-	width: 97%;
+	height: 40px;
+	width: 50px;
 }
 
 #curhint {
 	color: black;
 }
 
-#fileslist, .openfile {
+#fileslist {
         font-weight: bold;
 	text-align: left;
-	color: white;
-	background-color: #444444;
-	border-color: transparent;
-	border-radius: 5px;
 }
 
 .pcodecontainer {
 	margin: 9px;
 }
 
+
 .atomsimilar {
-	fill: #f00f0f;
+	fill: red;
+}
+
+#menutext {
+	width: 600px;
+	height: 120px;
+	border: 1px solid black;
+        border-radius:5px;
+        -moz-border-radius:5px;
+	opacity: 1.0;
 }
 
 .menutextatom {
+    font-size: 150%;
+    background-color: black;
     color: white;
 }
 
 .menutextlist {
+    font-size: 300%;
+    background-color: black;
     color: red;
 }
 
 
-.menuitem, .alterkey {
+.menuitem {
+	vertical-align:top;
 	color: white;
-	font-size: 100%;
-}
-
-.sepleftmenu {
-	height: 5px;
-}
-
-.alterkey {
-        color: #676767;
-        font-size: 100%;
-}
-
-.menuspaces {
-        font-size: 110%;
+	margin: 5px;
+	font-size: 110%;
 }
 
 .highlight {
-        fill: #0f0fff;
+        fill: blue;
 }
 
 .highlight:hover {
@@ -323,13 +264,13 @@ button {
 
 .listclick {
         fill: #cccccc;
-        stroke: black;
+        stroke:black;
         stroke-width: 3px;
 	opacity: 0.6;
 }
 
 .atomclick {
-	fill: #ee0000;
+	fill: red;
 }
 
 .atomclick:hover {
@@ -342,3 +283,31 @@ button {
 	stroke: gray;
 	opacity: 0.6;
 }
+
+.listtypeclick {
+	fill: red;
+}
+
+.listclick2 {
+        fill: #888899;
+        stroke:black;
+        stroke-width: 2px;
+	opacity: 0.6;
+}
+
+.atomclick2 {
+        fill: #333355;
+}
+
+.atomclick2:hover {
+        font-weight: bolder;
+}
+
+.atomparentclick2 {
+        fill: #9999aa;
+	stroke: black;
+	stroke-width: 1px;
+        opacity: 0.4;
+}
+
+

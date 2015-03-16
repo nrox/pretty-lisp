@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html version="-//W3C//DTD XHTML 1.1//EN"
+      xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.w3.org/1999/xhtml
+                          http://www.w3.org/MarkUp/SCHEMA/xhtml11.xsd"
+>
+<html>
+
+<head>
+	<META HTTP-EQUIV="Cache-Control" CONTENT="no-cache">
+	<META HTTP-EQUIV="Pragma" CONTENT="no-cache">
+	<META HTTP-EQUIV="Expires" CONTENT="0">
+	<meta http-equiv='Content-Type' content='text/html; charset=utf-8' />
+	<link rel="stylesheet" type="text/css" href="/style.css" />
+        <link rel="shortcut icon" href="/mp2.ico" type="image/x-icon" />
+        <script type='text/javascript' src='/jquery.js'></script>
+	<script type='text/javascript' src='/ajax.js'></script>
+	<script type='text/javascript' src='/jsinterface.js'></script>
+	<title>pretty-LISP Editor</title>
+</head>
+
+<body id='body'>
+
+<div id='container'>
+
+<div id='topmenu'>
+	<table style='text-align:center;'>
+	<tr><td>
+		<button type="button" class='sepbutton' onclick="toggleSeparator('idlispide');sepbuttonClick();">pretty-LISP Editor</button>
+	</td></tr><tr><td>
+		<b style='font-size:80%;color:white;' id='copyright'>© Nuno Rocha 2012</b>
+	</td></tr>
+	</table>
+</div>
+
+<div id='topsubmenu'>
+</div>
+
+<div id='debuggermenu'>
+<table id='tbdebugger'>
+        <tr>
+                <td id='debuggertxt'></td>
+        </tr>
+</table>
+</div>
+
+<div id='bottommenucontainer'>
+<table id='tbbottommenu'>
+	<tr>
+		<td id='tdmenu'></td>
+	</tr>
+</table>
+</div>
+
+<div id='leftmenucontainer'>
+<table id='tbleftmmenu'>
+        <tr>
+                <td id="menuarea"></td>
+        </tr>
+</table>
+</div>
+
+
+<div id='curfileid'>
+</div>
+
+<div id='bottomstatus'>
+</div>
+
+<div id='hintscontainer'>
+<table id='tbhints'>
+        <tr>
+                <td id='curhint'></td>
+        </tr>
+        <tr>
+                <td id='hintslist'></td>
+        </tr>
+
+        <tr>
+		<td>
+	   <table>
+	     <tr>
+                <td>
+                        <button class='transferhint' onclick="$('#menutext').val($('#hinttxt').val());">⇇<br/>set</button>
+                        <button class='transferhint' id='tohint' onclick='txtToHint();'>⇉<br/>get</button>
+                        <button class='transferhint' onclick="$('#hintslist').empty();$('#curhint').empty();$('#tbhints').css('display','none');">X<br/>close</button>
+                </td>
+	     </tr>
+	     <tr>                
+		<td>
+			<textarea id='hinttxt'></textarea>
+		</td>
+	      </tr>
+	    </table>
+		</td>
+        </tr>
+        <tr>
+                <td id="hintbuttons">
+			<table>
+			<tr>
+				<td>
+                        		<button class='hintbutton'>complete</button>
+				</td>
+				<td>
+                        		<button class='hintbutton'>similar</button>
+				</td>
+				<td>
+                                        <button class='hintbutton'>search</button>
+				</td>
+			</tr>
+			<tr>
+                                <td>
+                                        <button class='hintbutton'>def</button>
+                                </td>
+                                <td>
+                                        <button class='hintbutton'>suggest</button>
+                                </td>
+				<td>
+                                        <button class='hintbutton'>examples</button>					
+				</td>
+			</tr>
+                        <tr>
+                                <td>
+                                        <button class='hintbutton'>history</button>
+                                </td>
+                                <td>
+                                        <button class='hintbutton'>hyperspec</button>
+                                </td>
+                                <td>
+					<button class='hintbutton'>case</button>
+                                </td>
+                        </tr>
+
+			</table>
+		</td>
+        </tr>
+</table>
+</div>
+
+<div id='idlispide' class='separator'></div>
+</div>
+</body>
+</html>
+	

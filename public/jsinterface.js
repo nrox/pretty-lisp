@@ -1,16 +1,41 @@
-
 /**
-* pretty-LISP
-* Javascript Interface
-* Copyright Nuno Rocha 2012
-* LICENSE: Do whatever with this file.
+pretty-LISP Editor (beta)
+ 
+Copyright (c) 2012, Nuno Rocha.  All rights reserved.
+
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions
+ are met:
+
+   * Redistributions of source code must retain the above copyright
+     notice, this list of conditions and the following disclaimer.
+
+   * Redistributions in binary form must reproduce the above
+     copyright notice, this list of conditions and the following
+     disclaimer in the documentation and/or other materials
+     provided with the distribution.
+
+ THIS SOFTWARE IS PROVIDED BY THE AUTHOR 'AS IS' AND ANY EXPRESSED
+ OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+ DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+ GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 */
 
-$(document).ready(function(){
-	setHintButtons();
-});
+var ONLINE_DEMO; // = "/home/lispers/pretty-lisp-demo/temp/tutorial.lisp";
 
-/** switch to another page. Currently just one page, the editor. */
+var backColors = ["#a0b69a", "#f9f9f9", "white", "lightgray", "gray", "#839496", "#93a1a1", "#eee8d5", "#fdf6e3"];
+
+var REQUESTS_TAG = "irequest"; 
+
+/** switch to another page. (Currently just one page, the editor) */
 
 function toggleSeparator(sepID) {
         $(".separator").css("display","none");
@@ -23,11 +48,37 @@ function toggleSeparator(sepID) {
 
 function goToElement(roxid){
 	try {
-		var off = $("[roxid='" + roxid + "']").offset();
+		var job = $("[roxid='" + roxid + "']");
+		if ( isScrolledIntoView(job) ){
+			return true;
+		}
+		var off = job.offset();
 		$('body').animate({ scrollTop: (off.top - 200), scrollLeft: (off.left-700) }, 200);
+		return true;
 	} catch (e) {
-		alertError("goToElement('" + roxid + "')\n" + e);
+		//alertError("goToElement('" + roxid + "')\n" + e);
+		return false;
 	}
+}
+
+/** return true if element is on sight */
+/*http://stackoverflow.com/questions/487073/jquery-check-if-element-is-visible-after-scrolling */
+
+function isScrolledIntoView(job) {
+    var docViewTop = $(window).scrollTop() + 50;
+    var docViewBottom = docViewTop + $(window).height() - 250;
+
+    var elemTop = job.offset().top;
+    var elemBottom = elemTop + job.height();
+
+    var docViewLeft = $(window).scrollLeft() + 100;
+    var docViewRight = docViewLeft + $(window).width() - 100;
+
+    var elemLeft = job.offset().left;
+    var elemRight = elemLeft + job.width();
+
+
+    return ((elemBottom <= docViewBottom) && (elemTop >= docViewTop) && (elemRight <= docViewRight) && (elemLeft >= docViewLeft));
 }
 
 /** trims and removes char as # : ' to hightlight similar texts */  
@@ -59,7 +110,7 @@ function formatForHighlighting(str) {
 	return str.toLowerCase();
 }
 
-/** highlight select element and the one with similar text */
+/** highlight select element and the ones with similar text */
 
 function highlightSelected(roxid){
    try {
@@ -109,11 +160,12 @@ function highlightSelected(roxid){
                 });
         }
    } catch (e){
-        alertError("highlightSelected " + roxid + "\n" + e);
+	//some regular expressions errors occur, ex: for #\( or #\)
+        //alertError("highlightSelected " + roxid + "\n" + e);
    }
 }
 
-/**returns the text content of a svg text element, considering tspan*/
+/** returns the text content of a svg text element, considering tspan*/
 
 function visibleText(textDOM) {
 	var children = textDOM.childNodes;
@@ -135,7 +187,10 @@ function visibleText(textDOM) {
 }
 
 
-/** this function is called on element click and to set focus on the element */
+/** this function is called on element click and to set focus on the element 
+intended to be used also for other actions.	
+*/
+
 
 function roxEvent(roxid, evtType){
 	var job = $("[roxid='" + roxid + "']");
@@ -154,6 +209,7 @@ function roxEvent(roxid, evtType){
 }
 
 /** file operations which must be confirmed */
+
 var CONF = ["load", "saveAll", "closeAll", "openAll"];
 function confirmFileOp (operation) {
 	for (var o in CONF) {
@@ -164,13 +220,13 @@ function confirmFileOp (operation) {
 	return true;
 }
 
-/** controls file operations */
+/** process file operations, button click */
 
 function fileOp(operation) {
         hideMenu();
 	$("#bottomstatus").empty();
         var newvalue = $("#fileslist").val();
-        if (operation=="saveas") {
+        if (operation=="saveAs") {
                 var answer = prompt ("Save as:", $("#curfileid").html());
                 if (answer!=null) {
                         newvalue = answer;
@@ -228,7 +284,7 @@ var menuItems = {};
 /** alternative shortucts */
 
 var otherShortcuts = {13: "Update", 27: "Cancel", 37: "Left", 38: "Up", 39: "Right", 40: "Down"};
-var otherShortcutsHelpText = {"Update": "C-RET", "Cancel": "ESC",  "Left": "C ←", "Up": "C ↑", "Right": "C →", "Down": "C ↓"};
+var otherShortcutsHelpText = {"Update": "c-ret", "Cancel": "esc"} ; //ignore these: ,  "Left": "c ←", "Up": "c ↑", "Right": "c →", "Down": "c ↓"};
 
 /** populates menuItems */
 
@@ -277,23 +333,27 @@ function addAllMenuItems() {
 
 addAllMenuItems();
 
-/** constructs the html to be used as left menu */
+/** makes the html to be used as left menu */
 
 function makeEditMenu (menutgt) {
 	var count = 0;
-	var buff = "<table>";
+	var buff = "<table style='border: collapse;'>";
 	while (true) {
 		var item = menuItems[count];
 		if (item===undefined){
 			break;
 		} else if (item===null) { //separator
-			buff += "<tr><td>..................</td></tr>";
+			buff += "<tr><td><div class='sepleftmenu'></div></td></tr>";
 		} else {
 			buff += "<tr><td><nobr><b class='menuitem' menutgt='" + menutgt + "' ";
 			buff += "operation='" + item.operation + "' ";
 			buff += "onclick='sendEditingCommand(\"" + menutgt + "\",\"" +  item.operation + "\");'";
 			var other = otherShortcutsHelpText[item.operation];
-			other = other != undefined ? " <span class='alterkey'>" + other + "</span>" : ""; 
+			var spaces = "";
+			if (other !== undefined) {
+				spaces = "       ".substring(item.operation.length).replace(/\s/g,"&nbsp;");
+			}
+			other = other != undefined ? "<span class='menuspaces'>" + spaces + "</span><span class='alterkey'>" + other + "</span>" : ""; 
 			buff += ">" + item.key + " - " + item.operation + "</b>" + other + "</nobr></td></tr>";
 		}
 		count++;
@@ -391,7 +451,7 @@ function setLastEditWordToHint(evt) {
 	$("#hinttxt").val(txt);
 }
 
-/** send to server a request with the edting command */
+/** send to server a request with the editing command */
 
 function sendEditingCommand(roxid, operation) {
 	//get the editing element (jquery object)
@@ -404,6 +464,7 @@ function sendEditingCommand(roxid, operation) {
 	        var text = $("#menutext").val();
         	ob.innerHTML = text;
         	ob.textContent = text;
+		memo(true);
         }
         //clean the status
         $("#bottomstatus").empty();
@@ -485,9 +546,11 @@ function hintButtonClick(hint) {
    }
 }
 
-/** makes the html for the hints button and set it */
+/** makes the html for hint buttons and set it */
+
 function setHintButtons() {
-	var hints = ["complete", "similar", "search", "def", "suggest", "examples", "history", "hyperspec", "case"];
+	// additional "def", "suggest", "examples",
+	var hints = ["complete", "similar", "search", "history", "hyperspec", "case"];
 	var columns = 3;
 	var table = "<table>";
 	var to = hints.length + ( columns - hints.length % columns) % columns;
@@ -509,6 +572,7 @@ function setHintButtons() {
 }
 
 /** called onclick from #fileslist, the list of paths */
+// FIXME
 
 function markSelectedFilename () {
         var job = $("#fileslist");
@@ -516,7 +580,7 @@ function markSelectedFilename () {
         $("#filename").val(valor);	
 }
 
-/** from the path, retrives the filename and extension */
+/** from the path, retrives the filename.extension */
 
 function parseFileName(path) {
 	var name = path;
@@ -543,7 +607,7 @@ function updateTitle() {
 	$("title").html(name);
 }
 
-/** finish procesing onclick of an hints list item */
+/** sets the hint list item to the hint text area*/
 
 function hintComplete(txt, focus) {
 	if (focus==true) {
@@ -554,14 +618,84 @@ function hintComplete(txt, focus) {
 	}
 }
 
-var signalMemo;
+/** memorizes what is written in the editor text area */
+
+var memoPointer = 0;
+var memoData = ["","","","","","","",""];
+function memo(save) {
+	if (save!==undefined) {
+                memoPointer = (memoPointer + 1) % memoData.length;
+		memoData[memoPointer] = $("#menutext").val();
+	} else {
+                memoData[(memoPointer + 1) % memoData.length] = $("#menutext").val();
+                $("#menutext").val(memoData[memoPointer]);
+                memoPointer = (memoData.length + memoPointer - 1) % memoData.length;
+	}	
+}
+
+/** WAIT signal: signals a request to server and the end of the request */
+
+var copyMemo;
 function waitSignal (signalOn) {
 	if (signalOn) {
-		if (signalMemo == undefined) {
-			signalMemo = $("#topmenu").css("background-color");
+		if (copyMemo == undefined) {
+			copyMemo = $("#ready").html();
 		}
-		$("#topmenu").css("background-color", "grey");
+		$("#ready").html("WAIT");
 	} else {
-        	$("#topmenu").css("background-color", signalMemo);
+		$("#ready").html(copyMemo);
 	}
 }
+
+/** this funciotn is used to navigate to the target element, 
+clicking some hints list item after the searching for a word */
+
+function searchItemClick(roxid, itemid) {
+	if (goToElement(roxid) === true) {
+		roxEvent(roxid,'lastclick');
+	} else {
+		$("#" + itemid).css("opacity","0.2");
+		$("#" + itemid).attr("onclick","");
+	}
+}
+
+//some colors + solarized
+var backColorsPointer = 0;
+function enableBackChange() {
+	$("#ready").click( function () {
+                backColorsPointer = (backColorsPointer + 1) % backColors.length;
+		$("body").css("background-color", backColors[backColorsPointer]);
+		//the scrolling refresh the css (!) better solution ?
+                $("body").animate({ scrollTop: $(window).scrollTop() - 1}, 1);
+	});
+}
+
+function openOnlineDemo() {
+	toggleSeparator("idlispide");
+	var operation = "open";
+        var newvalue = ONLINE_DEMO;
+        $("#curfileid").html( $("#fileslist").val() );
+        $("#tbhints").css("display","inline");
+        var valor = $("#curfileid").html();
+        updateTitle();
+        var ob = $("<button operation='" + operation + "' value='" + valor + "' newvalue='" + newvalue + "'>" + operation + "</button>").get(0);
+        sendRequestToServer("fileoperation", ob);	
+}
+
+/** to do after page loads */
+
+$(document).ready(function(){
+        setHintButtons();
+        enableBackChange();
+	/*
+	if (!browserCheck(true)) {
+		return;
+	}
+	*/
+	if (ONLINE_DEMO != undefined ) {
+		toggleSeparator("idlispide");
+		setTimeout("openOnlineDemo()", 1);
+	}
+});
+
+

@@ -1,25 +1,16 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
-    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<html version="-//W3C//DTD XHTML 1.1//EN"
-      xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
-      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-      xsi:schemaLocation="http://www.w3.org/1999/xhtml
-                          http://www.w3.org/MarkUp/SCHEMA/xhtml11.xsd"
->
+<!DOCTYPE html>
 <html>
-
 <head>
 	<META HTTP-EQUIV="Cache-Control" CONTENT="no-cache">
 	<META HTTP-EQUIV="Pragma" CONTENT="no-cache">
 	<META HTTP-EQUIV="Expires" CONTENT="0">
 	<meta http-equiv='Content-Type' content='text/html; charset=utf-8' />
 	<link rel="stylesheet" type="text/css" href="/style.css" />
-        <link rel="shortcut icon" href="/mp2.ico" type="image/x-icon" />
+        <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
         <script type='text/javascript' src='/jquery.js'></script>
 	<script type='text/javascript' src='/ajax.js'></script>
 	<script type='text/javascript' src='/jsinterface.js'></script>
-	<title>pretty lisp editor</title>
+	<title>pretty-LISP Editor</title>
 </head>
 
 <body id='body'>
@@ -29,7 +20,9 @@
 <div id='topmenu'>
 	<table style='text-align:center;'>
 	<tr><td>
-		<button type="button" class='sepbutton' onclick="toggleSeparator('idlispide');">pretty lisp editor</button>
+		<button type="button" class='sepbutton' onclick="toggleSeparator('idlispide');">pretty-LISP Editor</button>
+	</td></tr><tr><td>
+		<b id='ready'>READY</b>
 	</td></tr>
 	</table>
 </div>
@@ -52,12 +45,15 @@
 				<textarea id='menutext'>
 				</textarea>
 			</td>
-			<td id='tdtgtelement'>
+			<td>
+                                <button class='hidemenubutton' onclick='memo();'>
+                                        ↺<br/>memo
+                                </button>
+				<br />
 				<button class='hidemenubutton' id='tgtelement'>
-					⇈<br/>show
+					⇱<br/>scroll
 				</button>
-			</td>
-			<td id='tdhidemenubutton'>
+				<br />
 				<button class='hidemenubutton' onclick='hideMenu();'>
 					X<br/>close
 				</button>
@@ -87,35 +83,41 @@
                 <td id='curhint'></td>
         </tr>
         <tr>
-                <td id='hintslist'></td>
+		<td>
+                	<div id='hintslist'></div>
+		</td>
         </tr>
 
-        <tr>
+	<tr>
+		<td><table><tr>
 		<td>
-	   <table>
-	     <tr>
-                <td>
-                        <button class='transferhint' onclick="$('#menutext').val($('#hinttxt').val());">⇇<br/>set</button>
-                        <button class='transferhint' id='tohint' onclick='txtToHint();'>⇉<br/>get</button>
-                        <button class='transferhint' onclick="$('#hintslist').empty();$('#curhint').empty();$('#tbhints').css('display','none');">X<br/>close</button>
-                </td>
-	     </tr>
-	     <tr>                
+			<button class='transferhint' onclick="$('#menutext').val($('#hinttxt').val());">⇇<br/>set</button>
+			<br />
+			<button class='transferhint' id='tohint' onclick='txtToHint();'>⇉<br/>get</button>
+			<br />
+			<button class='transferhint' onclick="$('#hintslist').empty();$('#curhint').empty();$('#tbhints').css('display','none');">X<br/>close</button>
+		</td>
 		<td>
-			<textarea id='hinttxt'></textarea>
+			<table>
+				<tr>
+					<td>
+						<textarea id='hinttxt'></textarea>
+					</td>
+				</tr>
+        			<tr>
+                			<td id="hintbuttons"></td>
+        			</tr>
+			</table>
 		</td>
-	      </tr>
-	    </table>
-		</td>
-        </tr>
-        <tr>
-                <td id="hintbuttons">
-		</td>
-        </tr>
+		</tr></table></td>
+	</tr>
 </table>
 </div>
 
 <div id='idlispide' class='separator'></div>
+
+<div id='copyright'>Copyright © <br />Nuno Rocha, 2012</div>
+
 </div>
 </body>
 </html>

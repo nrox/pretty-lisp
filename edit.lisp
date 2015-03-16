@@ -1,41 +1,50 @@
 
 
-;;; pretty-LISP - Common LISP Editor 
+;;; pretty-LISP Editor (beta) 
 
+#|
+ Copyright (c) 2012, Nuno Rocha.  All rights reserved.
 
-;;;   Nuno Rocha 2012 
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions
+ are met:
 
+   * Redistributions of source code must retain the above copyright
+     notice, this list of conditions and the following disclaimer.
+
+   * Redistributions in binary form must reproduce the above
+     copyright notice, this list of conditions and the following
+     disclaimer in the documentation and/or other materials
+     provided with the distribution.
+
+ THIS SOFTWARE IS PROVIDED BY THE AUTHOR 'AS IS' AND ANY EXPRESSED
+ OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+ DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+ GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+|# 
 
 ;;; These are the main functions to deal with code editing 
 
-
-;;; and left menu commands interpretation. 
-
-
 ( in-package :pretty-lisp )
-
-
-( defvar +allowed-edit-operation+
-  '( :cancel :update :execute :cut :copy :paste :delete :before :inside :after
-   :free :surround :comment :transpose :collapse :collapseall :expand
-   :expandall :left :up :right :down :undo :redo )
-  "If the editing operation is not in this list it will not be processed." )
-
 
 ( defun set-as-focus-element ( xml )
   "sets a focus mark on the xml element."
   ( if ( xml-node-p xml ) ( xml-attribute-set xml :focus "focus" ) ) )
 
-
 ( defun remove-as-focus-element ( xml )
   "remove the focus mark from the xml element."
   ( if ( xml-node-p xml ) ( xml-attribute-set xml :focus nil ) ) )
 
-
 ( defun get-focus-element ( editing-nodes )
   "get the element which has the focus."
   ( find-by-attribute editing-nodes :focus "focus" ) )
-
 
 ( defun navigate ( elem parent editing-nodes operation )
   "navigating trough nodes with arrow keys, or other key combinations."
@@ -63,7 +72,6 @@
      ( or ( and ( equal layout h ) next-sibling )
          ( and ( or ( equal layout v ) ( = len 1 ) ) child ) elem ) )
     ( t elem ) ) ) )
-
 
 ( defun minimize-and-expand ( previous-response ancestor editing-nodes operation )
   "Changing the container height to have some kind of code-colapse and code-expand
@@ -94,21 +102,12 @@ To only one container or all of them"
             to-process ) ) ) )
    previous-response ) )
 
-
 ( defgeneric make-triggered-event ( obj evtType ) )
-
 
 ( defmethod make-triggered-event ( obj evtType ) )
 
-
 ( defmethod make-triggered-event ( ( xml xml-node ) evtType )
            ( js-predefined "roxEvent" ( xml-attribute-get xml :roxid ) evtType ) )
-
-
-( ;;DELETE ME
-   defun surround-with-dig ( obj1 obj2 &optional ( tag "dig" ) )
- ( make-instance 'xml-node :tag tag :children ( list obj1 obj2 ) ) )
-
 
 ( defun transpose-layout ( event-element )
   "Switches the layout of the list {horizontal, vertical}.
@@ -128,15 +127,15 @@ The internal representation is a list { (0 1), (1 0) }"
     ;; set the new layout as an attribute of the element
      ( xml-attribute-set event-element :layout ( format nil "~A" layout ) ) ) )
 
-
 ( defun free-element
        ( event-element eltype parent siblings pos event-svg editing-nodes )
   "If the element is a list, this functions replaces the list with its children
 If it is a comment, it removes the comment marks,
 so that tha comment words are changed to code"
+  ( declare ( ignore event-svg ) )
   ( let ( ( freed-elements ) ( insert-position ) )
     ( when ( string-equal :atom eltype )
-      ( let ( ( text ( trim-comment-marks ( xml-value event-svg ) ) ) )
+      ( let ( ( text ( trim-comment-marks ( xml-value event-element ) ) ) )
         ( xml-value-set event-element ( if text text "" ) )
         ( setf freed-elements ( parse-pretty-atom event-element ) ) ) )
     ( when ( string-equal :list eltype )
@@ -157,6 +156,33 @@ so that tha comment words are changed to code"
                       ( subseq editing-nodes ( 1+ insert-position ) ) ) ) )
     editing-nodes ) )
 
+( defun delete-element ( event-element parent siblings pos editing-nodes )
+  ( if parent
+      ( progn
+       ( setf ( xml-children parent ) ( remove event-element siblings ) )
+       ( if ( xml-children parent )
+           ( set-as-focus-element
+            ( nth ( min pos ( 1- ( length ( xml-children parent ) ) ) )
+                 ( xml-children parent ) ) )
+           ( set-as-focus-element parent ) ) )
+      
+      ;; else (no parent - top level)
+       ( let ( ( insert-position ( position event-element editing-nodes ) ) )
+        
+        ;; avoid empty editing nodes by inserting a dummy node
+         ( if ( = 1 ( length editing-nodes ) )
+            ( setf editing-nodes
+                    ( append editing-nodes
+                            ( list
+                             ( make-instance 'pretty-atom :children
+                              ( list "#||#" ) :attributes
+                              ( list ( cons :class +CLASS-ATOM+ )
+                                    ( cons :type +CLASS-ATOM+ ) ) ) ) ) ) )
+        ( setf editing-nodes ( remove event-element editing-nodes ) )
+        ( set-as-focus-element
+         ( nth ( min insert-position ( 1- ( length editing-nodes ) ) )
+              editing-nodes ) ) ) )
+  editing-nodes )
 
 ( defun update-element
        ( event-element eltype parent siblings pos event-svg editing-nodes )
@@ -173,6 +199,9 @@ so that tha comment words are changed to code"
     ;; if its an atom the new text must be parsed, and the resulting elements
     ;; inserted in the place of the element
      ( when ( string-equal :atom eltype )
+      ( when ( = 0 ( length text ) )
+        ( return-from update-element
+         ( delete-element event-element parent siblings pos editing-nodes ) ) )
       ( xml-value-set event-element text )
       ( setf new-elements ( parse-pretty-atom event-element ) )
       ( set-as-focus-element ( car new-elements ) )
@@ -192,13 +221,11 @@ so that tha comment words are changed to code"
                         ( subseq editing-nodes ( 1+ insert-position ) ) ) ) ) )
     editing-nodes ) )
 
-
 ( defun replace-newlines
        ( text &key ( to-replace ( list #\Newline ) ) ( replace-with #\Space ) )
   ( reduce
    #'( lambda ( txt replc ) ( substitute replace-with replc txt :test #'char= ) )
    to-replace :initial-value text ) )
-
 
 ( defun comment-element ( event-element parent pos )
   "Returns a pretty-atom with the textual code represented by event-element preceeded by a comment mark"
@@ -220,7 +247,6 @@ so that tha comment words are changed to code"
      ( if parent ( setf ( nth pos ( xml-children parent ) ) commented-element ) )
    commented-element ) )
 
-
 ( defun surround-element ( event-element parent siblings )
   "Sorround the element with closed parentheses"
   ( let ( ( newlist
@@ -232,7 +258,6 @@ so that tha comment words are changed to code"
     ( when parent
       ( setf ( xml-children parent ) ( substitute newlist event-element siblings ) ) )
     newlist ) )
-
 
 ( defun insert-element
        ( event-element operation parent pos siblings editing-nodes )
@@ -272,36 +297,6 @@ so that tha comment words are changed to code"
                       ( subseq editing-nodes insert-position ) ) ) )
     editing-nodes ) )
 
-
-( defun delete-element ( event-element parent siblings pos editing-nodes )
-  ( if parent
-      ( progn
-       ( setf ( xml-children parent ) ( remove event-element siblings ) )
-       ( if ( xml-children parent )
-           ( set-as-focus-element
-            ( nth ( min pos ( 1- ( length ( xml-children parent ) ) ) )
-                 ( xml-children parent ) ) )
-           ( set-as-focus-element parent ) ) )
-      
-      ;; else (no parent - top level)
-       ( let ( ( insert-position ( position event-element editing-nodes ) ) )
-        
-        ;; avoid empty editing nodes by inserting a dummy node
-         ( if ( = 1 ( length editing-nodes ) )
-            ( setf editing-nodes
-                    ( append editing-nodes
-                            ( list
-                             ( make-instance 'pretty-atom :children
-                              ( list "#||#" ) :attributes
-                              ( list ( cons :class +CLASS-ATOM+ )
-                                    ( cons :type +CLASS-ATOM+ ) ) ) ) ) ) )
-        ( setf editing-nodes ( remove event-element editing-nodes ) )
-        ( set-as-focus-element
-         ( nth ( min insert-position ( 1- ( length editing-nodes ) ) )
-              editing-nodes ) ) ) )
-  editing-nodes )
-
-
 ( defun editelement ( request-xml )
   "This process the xml request for purposes of editing the elements."
   
@@ -334,12 +329,18 @@ The xml has the example form:
        ;; The opened file which contains the element.
        ;; Several files may be opened. An alternative is to identify
        ;; the file as an attribute in the svg element
-        ( pfile ( roxid-pfile roxid ) )  
-    ;; list of xml nodes, representing the code in the file
-    ;; each element of the xml list represents a code list or an atom
-     ( editing-nodes ( copy-list ( pfile-xml pfile ) ) ) 
+        ( pfile ( roxid-pfile roxid ) )
+    ( dummy
+     ( if ( null pfile )
+         ( return-from editelement
+          ( jquery-1 "#bottomstatus" "html" operation
+           ": Impossible to process command. Was file closed? Multiple tabs for same file?" ) ) ) )
+      ;; list of xml nodes, representing the code in the file
+      ;; each element of the xml list represents a code list or an atom
+       ( editing-nodes ( copy-list ( pfile-xml pfile ) ) ) 
     ;; find the xml node corresponding to the event element
-     ( event-element ( find-by-attribute editing-nodes :roxid roxid ) ) 
+     ( event-element ( find-by-attribute editing-nodes :roxid roxid ) )
+    ( event-element-copy ( xml-copy event-element ) ) 
     ;; the parent of the element (a list, if any)
      ( parent ( xml-parent event-element ) )  
     ;; if the parent (list) exists,
@@ -352,14 +353,16 @@ The xml has the example form:
      ( pos ( if parent ( position event-element siblings ) 0 ) ) 
     ;; the xml to be returned as the answer to the editing event
      ( ret ( jquery-1 "#bottomstatus" "html" operation ) ) )
-   
+   ( declare ( ignore dummy ) ) 
    ;; if the operation is not allowed return
     ( unless ( find operation +allowed-edit-operation+ :test #'string-equal )
-     ( setf ( xml-children ret ) ( list ( format nil "~A not allowed" operation ) ) )
+     ( setf ( xml-children ret )
+             ( list ( format nil "~A: disabled for this session!" operation ) ) )
      ( return-from editelement ret ) )
-     ;; remove the classes that are used in the interface
-     ;; to colour newly edited elements
-      ( remove-editing-class ancestor ) 
+      
+   ;; remove the classes that are used in the interface
+   ;; to colour newly edited elements
+   ;(remove-editing-class ancestor )
    ;; if :cancel, set the focus in the same element
     ( if ( string-equal operation :cancel ) ( set-as-focus-element event-element ) ) 
    ;; if collapsing or expanding, set next focus on the top level element
@@ -386,7 +389,7 @@ The xml has the example form:
     ( when ( string-equal operation :execute )
      ( setf ( xml-children ret )
              ( list
-              ( format nil "~A"
+              ( format nil "~A> ~S" ( string-upcase ( package-name *package* ) )
                       ( eval
                        ( read-from-string
                         ( xml-to-code-string event-element ) ) ) ) ) )
@@ -441,13 +444,19 @@ The xml has the example form:
                ( insert-element event-element operation parent pos siblings
                 editing-nodes ) ) )
    
-   ;; undo redo
-    ( when ( find operation '( :undo :redo ) :test #'string-equal )
+   ;; undo
+    ( when ( string-equal operation :undo )
+     ( setf track ( getf ( pfile-current-focus pfile ) :undo ) )
      ( setf editing-nodes ( pfile-undo-redo pfile operation nil ) )
-     ( setf track
-             ( or ( pfile-current-focus pfile )
-                 ( and ( find ancestor editing-nodes ) event-element )
-                 ( car editing-nodes ) ) ) )
+     ( unless track
+       ( setf track
+               ( or ( and ( find ancestor editing-nodes ) event-element )
+                   ( car editing-nodes ) ) ) ) )
+   
+   ;; redo
+    ( when ( string-equal operation :redo )
+     ( setf editing-nodes ( pfile-undo-redo pfile operation nil ) )
+     ( setf track ( getf ( pfile-current-focus pfile ) :redo ) ) )
    
    ;; update nodes in browser (1)
     ( when
@@ -495,10 +504,9 @@ The xml has the example form:
        ;; undo redo dont need pointer update
        ;; only the update of current file
        ;; because the pointer was already changed
-        ( progn
-        ( setf ( pfile-xml pfile ) editing-nodes )
-        ( setf ( pfile-focus pfile ) track ) )
-        ;; other than undo redo
-         ( pfile-update-current-nodes pfile editing-nodes track operation ) )
+        ( progn ( setf ( pfile-xml pfile ) editing-nodes ) ) 
+       ;; other than undo redo
+        ( pfile-update-current-nodes pfile editing-nodes
+        ( list :undo event-element-copy :redo track ) operation ) )
    ( setf ret ( wrap ( list ret ( make-triggered-event track "lastclick" ) ) ) )
    ( minimize-and-expand ret ancestor editing-nodes operation ) ) )

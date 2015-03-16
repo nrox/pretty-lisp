@@ -1,33 +1,51 @@
 
 
-;;; pretty-LISP - Common LISP Editor 
+;;; pretty-LISP Editor (beta) 
 
+#|
+ Copyright (c) 2012, Nuno Rocha.  All rights reserved.
 
-;;;   Nuno Rocha 2012 
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions
+ are met:
 
+   * Redistributions of source code must retain the above copyright
+     notice, this list of conditions and the following disclaimer.
+
+   * Redistributions in binary form must reproduce the above
+     copyright notice, this list of conditions and the following
+     disclaimer in the documentation and/or other materials
+     provided with the distribution.
+
+ THIS SOFTWARE IS PROVIDED BY THE AUTHOR 'AS IS' AND ANY EXPRESSED
+ OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+ DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+ GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+|# 
 
 ;;; Functions for pretty printing, similar to the standard pprint. Need some fixes. 
 
-
 ( in-package :pretty-lisp )
-
 
 ( defparameter +pprint-replacement-char+
   #\X
   "Tokens that may cause pprint problems are
 replaced by strings/sequences of this char." )
 
-
 ( defparameter +dummy-char+ #\9 "Character to be used to replace comments." )
-
 
 ( defparameter +dummy-string+
   ( format nil "~A" +dummy-char+ )
   "String to be used as replacement for comments." )
 
-
 ( defgeneric parse-pretty-atom ( xml ) )
-
 
 ( defun comment-p ( str )
   "Checks if str contains a comment."
@@ -35,7 +53,6 @@ replaced by strings/sequences of this char." )
        ( or ( and ( > ( length str ) 0 ) ( eq #\; ( char str 0 ) ) )
            ( and ( > ( length str ) 1 ) ( eq #\# ( char str 0 ) )
                 ( eq #\| ( char str 1 ) ) ) ) ) )
-
 
 ( defgeneric format-for-pprint-template ( xml )
             ( :documentation
@@ -45,12 +62,10 @@ like (XXX (XXX XXX) (XX)). Comments are discarded.
 This will be used as input to return a prototype 
 of pprint (!)" ) )
 
-
 ( defmethod format-for-pprint-template ( ( xml pretty-list ) )
            ( format nil " ( ~{ ~A ~} ) "
                    ( or ( mapcar #'format-for-pprint-template ( xml-children xml ) )
                        ( list +dummy-string+ ) ) ) )
-
 
 ( defmethod format-for-pprint-template ( ( xml pretty-atom ) )
            ( let ( ( str ( xml-value xml ) ) )
@@ -74,7 +89,6 @@ of pprint (!)" ) )
                    +pprint-replacement-char+ )
                   str ) ) ) )
 
-
 ( defun unfold-pretty-xml-to-list-of-string ( xml )
   "Takes the pretty atoms and lists and retrieves a
 list of their text contents, list types and
@@ -89,7 +103,6 @@ boundaries, i.e, a list of strings."
    ( ( pretty-atom-p xml ) ( list ( xml-value xml ) ) )
    ( ( consp xml )
     ( apply #'append ( mapcar #'unfold-pretty-xml-to-list-of-string xml ) ) ) ) )
-
 
 ( defmethod pfile-pprint ( pfile &optional to-other-path )
            "Converts the pretty code to text and then saves
@@ -195,14 +208,11 @@ convertion."
                                        :initial-element #\Space ) ) ) )
                           ( if ( < cur-pos total )
                               ( setf cur-char ( char pprint-template cur-pos ) )
-                              ( setf cur-char +dummy-char+ ) ) ) )
-                 ;; separate each top level piece of code with a fresh line
-                  ( format final-stream "~A" #\Newline ) ) )
+                              ( setf cur-char +dummy-char+ ) ) ) ) ) )
              
              ;; finnaly
               ( write-to-file ( or to-other-path ( pfile-path pfile ) )
               ( get-output-stream-string final-stream ) ) ) )
-
 
 ( ;; DEBUG
    when nil

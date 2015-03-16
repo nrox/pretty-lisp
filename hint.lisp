@@ -1,38 +1,53 @@
 
 
-;;; pretty-LISP - Common LISP IDE 
+;;; pretty-LISP Editor (beta) 
 
+#|
+ Copyright (c) 2012, Nuno Rocha.  All rights reserved.
 
-;;;   Nuno Rocha 2011 
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions
+ are met:
 
+   * Redistributions of source code must retain the above copyright
+     notice, this list of conditions and the following disclaimer.
+
+   * Redistributions in binary form must reproduce the above
+     copyright notice, this list of conditions and the following
+     disclaimer in the documentation and/or other materials
+     provided with the distribution.
+
+ THIS SOFTWARE IS PROVIDED BY THE AUTHOR 'AS IS' AND ANY EXPRESSED
+ OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+ DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+ GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+|# 
 
 ( in-package :pretty-lisp )
 
-
-( defparameter *hints-history*
-  nil
-  "Records the words used in the hints text area." )
-
-
-( defparameter +max-hints+ 25 "max. number os items in the hints list" )
-
+( defparameter +max-hints+ 200 "max. number os items in the hints list" )
 
 ( defun trim-for-comparison ( str )
   "The tokens are compared trimming some of their char. 
 This function trims according to this."
   ( string-trim "#\"',`;: " str ) )
 
-
 ( defgeneric get-all-texts ( xml &optional buffer ) )
 
-
 ( defmethod get-all-texts ( ( xml xml-node ) &optional buffer )
+           ( declare ( optimize ( speed 3 ) ) )
            ( dolist ( child ( xml-children xml ) buffer )
              ( setf buffer
                      ( union buffer ( get-all-texts child ) :test #'string= ) ) ) )
 
-
-( defmethod get-all-texts ( xml &optional buffer )
+( defmethod get-all-texts ( xml &optional buffer ) ( declare ( optimize ( speed 3 ) ) )
            ( cond
             ( ( consp xml )
              ( dolist ( child xml buffer )
@@ -44,15 +59,12 @@ This function trims according to this."
                             #'string= ) ) )
             ( t ( list ( format nil "~A" xml ) ) ) ) )
 
-
 ( defgeneric get-all-atoms-with-text ( xml text &optional buffer ) )
 
-
 ( defmethod get-all-atoms-with-text ( ( xml pretty-atom ) text &optional buffer )
-           ( declare ( ignore buffer ) )
+           ( declare ( optimize ( speed 3 ) ) ( ignore buffer ) )
            ( if ( equalp ( trim-for-comparison ( xml-value xml ) ) text ) ( list xml )
                nil ) )
-
 
 ( defmethod get-all-atoms-with-text ( xml text &optional buffer )
            ( cond
@@ -70,7 +82,6 @@ This function trims according to this."
                        ( append buffer ( get-all-atoms-with-text child text ) ) ) ) )
             ( t nil ) ) )
 
-
 ( defun hint-item-attributes ( fun arg1 arg2 )
   "Prepares the attributes for the item in the hints results list.
 fun must be a format in the form 'function(~A,~A)'
@@ -84,7 +95,6 @@ arg1 and arg2 are used to format the fun string."
                                "\"" "\\\"" )
                               ( string-replace ( string-replace arg2 "\\" "\\\\" )
                                "\"" "\\\"" ) ) ) ) ) ) )
-
 
 ( defun hint-complete ( texto )
   ( setf texto ( format-and-ucase texto ) )
@@ -106,7 +116,6 @@ arg1 and arg2 are used to format the fun string."
        ( hint-item-attributes "hintComplete(\"~A\", ~A)" item "true" ) :children
        ( list item ) ) )
     completions ) ) )
-
 
 ( defun hint-similar ( texto )
   ( setf texto ( format-and-ucase texto ) )
@@ -131,7 +140,6 @@ arg1 and arg2 are used to format the fun string."
        ( list item ) ) )
     completions ) ) )
 
-
 ( defun hint-history ( )
   ( mapcar
    #'( lambda ( item )
@@ -139,7 +147,6 @@ arg1 and arg2 are used to format the fun string."
       ( hint-item-attributes "hintComplete(\"~A\", ~A)" item "true" ) :children
       ( list item ) ) )
    *hints-history* ) )
-
 
 ( defun hint-hyperspec ( term )
   ( let ( ( href ( gethash ( format-and-ucase term ) ( get-hyperspec ) ) ) )
@@ -149,7 +156,6 @@ arg1 and arg2 are used to format the fun string."
          "menubar=yes,toolbar=yes" )
         ( js-predefined "alert"
          ( format nil "~A: not found in HyperSpec." term ) ) ) ) )
-
 
 ( defun hint-search ( pfile texto )
   ( setf texto ( trim-for-comparison texto ) )
@@ -173,17 +179,18 @@ arg1 and arg2 are used to format the fun string."
     ( append
      ( mapcar
       #'( lambda ( item )
-        ( make-instance 'xml-node :tag "div" :attributes
-         ( hint-item-attributes "goToElement('~A');roxEvent('~A','lastclick');"
-          ( first item ) ( first item ) )
-         :children ( list ( rest item ) "(" ( pfile-name pfile ) ")" ) ) )
+        ( let ( ( roxid ( auto-id "sc" ) ) )
+          ( make-instance 'xml-node :tag "div" :attributes
+           ( append ( list ( cons "id" roxid ) )
+                   ( hint-item-attributes "searchItemClick('~A','~A');"
+                    ( first item ) roxid ) )
+           :children ( list ( rest item ) "(" ( pfile-name pfile ) ")" ) ) ) )
       in-current-file )
      ( mapcar
       #'( lambda ( item )
         ( make-instance 'xml-node :tag "div" :attributes
          ( hint-item-attributes nil nil nil ) :children ( list item ) ) )
       in-other-files ) ) ) )
-
 
 ( defun hint-suggest ( texto suggest-function )
   ( setf texto ( trim-for-comparison texto ) )
@@ -204,12 +211,9 @@ arg1 and arg2 are used to format the fun string."
        ( list item ) ) )
     suggestions ) ) )
 
-
 ( defgeneric make-suggestion ( elem xml ) )
 
-
 ( defmethod make-suggestion ( elem xml ) "nil" )
-
 
 ( defmethod make-suggestion ( ( elem pretty-atom ) ( xml pretty-list ) )
            ( concatenate 'string "("
@@ -224,12 +228,9 @@ arg1 and arg2 are used to format the fun string."
                          ( xml-children xml ) :initial-value " " )
                         ")" ) )
 
-
 ( defgeneric make-examples ( elem xml ) )
 
-
 ( defmethod make-examples ( elem xml ) "nil" )
-
 
 ( defmethod make-examples ( ( elem pretty-atom ) ( xml pretty-list ) )
            ( concatenate 'string "("
@@ -259,12 +260,9 @@ arg1 and arg2 are used to format the fun string."
                          ( xml-children xml ) :initial-value " " )
                         ")" ) )
 
-
 ( defgeneric make-def ( elem xml ) )
 
-
 ( defmethod make-def ( elem xml ) )
-
 
 ( defmethod make-def ( ( elem pretty-atom ) ( xml pretty-list ) )
            ( let*
@@ -286,7 +284,6 @@ arg1 and arg2 are used to format the fun string."
                           ( if ( > len-children 3 ) "(#|...|#)" ) ")" )
              ( xml-value elem ) ) ) )
 
-
 ( defun hint ( xml )
   "Processes the hint operation. xml is the hint button which activated the request."
   
@@ -304,6 +301,10 @@ The xml has the example form:
     ( pfile ( find file *EDITING-FILES* :key #'pfile-path :test #'string= ) )
     ( xml-status ( jquery-1 "#bottomstatus" "html" operation texto ) )
     ( xml-answer ) )
+   ( unless ( find operation +allowed-hint-operations+ :test #'string-equal )
+     ( return-from hint
+      ( jquery-1 "#bottomstatus" "html" operation
+       ": disabled for this session!" ) ) )
    ( unless ( string-equal operation :history )
      ( setf *hints-history* ( remove texto *hints-history* :test #'string= ) )
      ( if ( not ( string= texto "" ) ) ( push texto *hints-history* ) )
