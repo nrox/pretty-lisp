@@ -6,7 +6,7 @@ Programming toy to edit Common Lisp code in the browser, where parenthesis are t
 
 [pretty-lisp demo](https://assemblino.com/pretty-lisp/)
 
-Open tutorial.lisp or other *.lisp files available.
+Click the _pretty-lisp editor_ button then open tutorial.lisp or other available *.lisp file in the dropdown list.
 
 ## Current state
 
