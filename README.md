@@ -2,6 +2,7 @@
 
 Programming toy to edit Common Lisp code in the browser, where parenthesis are transformed into "pretty" svg boxes.
 
+Discussion on [hacker news](https://news.ycombinator.com/item?id=3649518).
 ## Online demo
 
 [pretty-lisp demo](https://assemblino.com/pretty-lisp/)
