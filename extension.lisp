@@ -76,17 +76,16 @@ The javascript/jquery instructions must be latter interpreted from the returned 
 
 ( when nil
   ( defmethod parse-pretty-atom ( ( xml pretty-atom ) )
-             ( let ( ( str ( xml-value xml ) ) )
-               ( setf str ( ignore-errors ( code-string-to-xml str ) ) )
-               ( cond ( ( consp str ) ( mapcar #'xml-node-to-pretty-node str ) )  
-                     ;; FIXME remove because the parsing should return
-                     ;; always a list
-                      ( ( and ( xml-node-p str )
-                           ( setf str ( xml-node-to-pretty-node str ) )
-                           ( pretty-list-p str ) )
-                      ( xml-children str ) )
-                      ;; in case of error
-                       ( t ( parse-pretty-atom-2 xml ) ) ) ) ) )
+    ( let ( ( str ( xml-value xml ) ) )
+      ( setf str ( ignore-errors ( code-string-to-xml str ) ) )
+      ( cond ( ( consp str ) ( mapcar #'xml-node-to-pretty-node str ) )  
+            ;; FIXME remove because the parsing should return
+            ;; always a list
+             ( ( and ( xml-node-p str ) ( setf str ( xml-node-to-pretty-node str ) )
+                  ( pretty-list-p str ) )
+             ( xml-children str ) )
+             ;; in case of error
+              ( t ( parse-pretty-atom-2 xml ) ) ) ) ) )
 
 ( defun chromex-aux ( xml )
   ( make-instance 'xml-node :tag "dig" :children
@@ -125,11 +124,13 @@ The javascript/jquery instructions must be latter interpreted from the returned 
            ( set-all-positioning-properties node )
            ( setf node ( set-pretty-dimensions node ) )
            ( setf node ( set-absolute-pretty-dimensions node ) )
-           ( if with-classes ( set-atom-classes node ) ) )
+           ( if with-classes
+               ( set-atom-classes node ) ) )
           ( setf node ( wrap-with-root-svg node ) ) )
          ( make-instance 'xml-node :tag "div" :attributes
-          ( if with-classes ( list ( cons :class "pcodecontainer" ) ) ) :children
-          ( list node ) ) )
+          ( if with-classes
+              ( list ( cons :class "pcodecontainer" ) ) )
+          :children ( list node ) ) )
         
        ;; parse-pretty-atom
        ;; the results is a list

@@ -32,12 +32,14 @@
 
 ( in-package :pretty-lisp )
 
-( defgeneric xml-to-string ( xml-structure ) )
+( defgeneric xml-to-string
+    ( xml-structure ) )
 
 ( defun string-to-xml ( xml-string )
   ( parse-xml-string xml-string :output-type :xml-struct ) )
 
-( defgeneric xml-value ( xml ) )
+( defgeneric xml-value
+    ( xml ) )
 
 ( defmethod xml-value ( xml ) ( car ( xml-element-children xml ) ) )
 
@@ -51,7 +53,9 @@
            ( children :accessor xml-children :initarg :children :initform nil ) ) )
 
 ( ;; FIXME
-   progn ( defgeneric xml-node-p ( object ) )
+   progn
+ ( defgeneric xml-node-p
+     ( object ) )
  ( defmethod xml-node-p ( ( object xml-node ) ) t )
  ( defmethod xml-node-p ( object ) nil ) )
 
@@ -82,7 +86,9 @@
          ;; the attribute already exists, and the new value is not nil, replace it
           ( ( and pair value )
           ( setf ( rest pair )
-                  ( if ( stringp value ) value ( format nil "~A" value ) ) ) )
+                  ( if ( stringp value )
+                      value
+                      ( format nil "~A" value ) ) ) )
          
          ;; exists and value is nil, remove it
           ( pair
@@ -95,7 +101,9 @@
           ( setf ( xml-attributes node )
                   ( cons
                    ( cons att
-                         ( if ( stringp value ) value ( format nil "~A" value ) ) )
+                         ( if ( stringp value )
+                             value
+                             ( format nil "~A" value ) ) )
                    atts-list ) ) ) ) ) )
 
 ( defun xml-attribute-get ( node att )
@@ -120,17 +128,16 @@
         ( xml-attribute-set node att ( append cur-value ( list value ) ) )
         ( xml-attribute-set node att ( list cur-value value ) ) ) ) )
 
-( defgeneric xml-append-child ( parent child ) )
+( defgeneric xml-append-child
+    ( parent child ) )
 
 ( defmethod xml-append-child ( ( parent xml-node ) ( child string ) )
-           ( setf ( xml-children parent )
-                   ( append ( xml-children parent ) ( list child ) ) ) )
+  ( setf ( xml-children parent ) ( append ( xml-children parent ) ( list child ) ) ) )
 
 ( defmethod xml-append-child ( ( parent xml-node ) ( child xml-node ) )
-           ( when ( listp ( xml-children parent ) )
-             ( setf ( xml-children parent )
-                     ( append ( xml-children parent ) ( list child ) ) )
-             ( setf ( xml-parent child ) parent ) ) )
+  ( when ( listp ( xml-children parent ) )
+    ( setf ( xml-children parent ) ( append ( xml-children parent ) ( list child ) ) )
+    ( setf ( xml-parent child ) parent ) ) )
 
 ( defun read-xml ( in )
   ( let ( ( parents-stack ) ( root ) )
@@ -163,53 +170,63 @@
 
 ( defun auto-id ( prefix ) ( format nil "~A~A" prefix ( incf *ID-COUNTER* ) ) )
 
-( defgeneric xml-id-set ( str &optional prefix overwrite ) )
+( defgeneric xml-id-set
+    ( str &optional prefix overwrite ) )
 
 ( defmethod xml-id-set
            ( ( node xml-node ) &optional ( prefix :roxid ) ( overwrite nil ) )
-           ( when ( or overwrite ( not ( xml-attribute-get node prefix ) ) )
-             ( xml-attribute-set node prefix ( auto-id prefix ) ) ) )
+  ( when ( or overwrite ( not ( xml-attribute-get node prefix ) ) )
+    ( xml-attribute-set node prefix ( auto-id prefix ) ) ) )
 
 ( defmethod xml-id-set ( str &optional prefix overwrite )
-           ( declare ( ignore str prefix overwrite ) ) )
+  ( declare ( ignore str prefix overwrite ) ) )
 
-( defgeneric find-by-attribute ( xml attr val ) )
+( defgeneric find-by-attribute
+    ( xml attr val ) )
 
 ( defmethod find-by-attribute ( xml attr val )
-           ( if ( consp xml )
-               ( reduce #'( lambda ( x y ) ( or x ( find-by-attribute y attr val ) ) ) xml
-                       :initial-value nil )
-               nil ) )
+  ( if ( consp xml )
+      ( reduce #'( lambda ( x y ) ( or x ( find-by-attribute y attr val ) ) ) xml
+              :initial-value nil )
+      nil ) )
 
 ( defmethod find-by-attribute ( ( xml xml-node ) attr val )
-           "Finds a descendant of xml by a value of its attribute."
-           ( if ( string-equal ( xml-attribute-get xml attr ) val ) xml
-               ( reduce #'( lambda ( x y ) ( or x ( find-by-attribute y attr val ) ) )
-                       ( xml-children xml ) :initial-value nil ) ) )
+  "Finds a descendant of xml by a value of its attribute."
+  ( if ( string-equal ( xml-attribute-get xml attr ) val )
+      xml
+      ( reduce #'( lambda ( x y ) ( or x ( find-by-attribute y attr val ) ) )
+              ( xml-children xml ) :initial-value nil ) ) )
 
-( defgeneric find-ancestor ( xml ) )
+( defgeneric find-ancestor
+    ( xml ) )
 
 ( defmethod find-ancestor ( xml ) )
 
 ( defmethod find-ancestor ( ( xml xml-node ) )
-           "Finds the top level parent of parent,
+  "Finds the top level parent of parent,
 or the same xml, if it has no parent."
-           ( if ( xml-parent xml ) ( find-ancestor ( xml-parent xml ) ) xml ) )
+  ( if ( xml-parent xml )
+      ( find-ancestor ( xml-parent xml ) )
+      xml ) )
 
-( defgeneric xml-copy ( obj ) )
+( defgeneric xml-copy
+    ( obj ) )
 
 ( defmethod xml-copy ( str )
-           ( if ( consp str ) ( mapcar #'xml-copy str ) ( format nil "~A" str ) ) )
+  ( if ( consp str )
+      ( mapcar #'xml-copy str )
+      ( format nil "~A" str ) ) )
 
-( defmethod xml-copy ( ( xml xml-node ) ) ( declare ( optimize ( speed 3 ) ) )
-           ( let ( copy ( atts ( xml-attributes xml ) ) ( ppts ( xml-properties xml ) ) )
-             ( setf copy ( make-instance ( class-of xml ) :tag ( xml-tag xml ) ) )
-             ( dolist ( attpair atts )
-               ( xml-attribute-set copy ( car attpair ) ( rest attpair ) ) )
-             ( dolist ( pptpair ppts )
-               ( xml-property-set copy ( car pptpair ) ( rest pptpair ) ) )
-             ( dolist ( child ( mapcar #'xml-copy ( xml-children xml ) ) copy )
-               ( xml-append-child copy child ) ) ) )
+( defmethod xml-copy ( ( xml xml-node ) )
+  ( declare ( optimize ( speed 3 ) ) )
+  ( let ( copy ( atts ( xml-attributes xml ) ) ( ppts ( xml-properties xml ) ) )
+    ( setf copy ( make-instance ( class-of xml ) :tag ( xml-tag xml ) ) )
+    ( dolist ( attpair atts )
+      ( xml-attribute-set copy ( car attpair ) ( rest attpair ) ) )
+    ( dolist ( pptpair ppts )
+      ( xml-property-set copy ( car pptpair ) ( rest pptpair ) ) )
+    ( dolist ( child ( mapcar #'xml-copy ( xml-children xml ) ) copy )
+      ( xml-append-child copy child ) ) ) )
 
 ( defun s-xml-to-rox-xml ( xml-struct )
   "Converts s-xml struct to xml-node."
@@ -251,17 +268,24 @@ or the same xml, if it has no parent."
    :xml-struct ) )
 
 ( defmethod xml-to-string ( xml-structure )
-           ( declare ( optimize ( speed 3 ) ( safety 0 ) ) )
-           ( print-xml-string xml-structure :pretty t :input-type :xml-struct ) )
+  ( declare ( optimize ( speed 3 ) ( safety 0 ) ) )
+  ( print-xml-string xml-structure :pretty t :input-type :xml-struct ) )
 
-( defmethod xml-to-string ( ( node xml-node ) )  
-           ;; the convertion to string of xml-node use an
-           ;; intermediate convertion to s-xml
-            ( xml-to-string ( rox-xml-to-s-xml node ) ) )
+( defmethod xml-to-string ( ( node xml-node ) )
+  
+  
+  ;; the convertion to string of xml-node use an
+  ;; intermediate convertion to s-xml
+   ( xml-to-string ( rox-xml-to-s-xml node ) ) )
 
 ( defmethod xml-value ( ( xml xml-node ) )
-           ( let ( ( val ( car ( xml-children xml ) ) ) )
-             ( or ( and val ( if ( stringp val ) val ( format nil "~A" val ) ) ) "" ) ) )
+  ( let ( ( val ( car ( xml-children xml ) ) ) )
+    ( or
+     ( and val
+          ( if ( stringp val )
+              val
+              ( format nil "~A" val ) ) )
+     "" ) ) )
 
 ( defun xml-value-set ( xml val )
   ( setf ( xml-children xml ) ( list ( format nil "~A" val ) ) ) )

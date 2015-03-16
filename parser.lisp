@@ -75,13 +75,19 @@
 ( defclass pretty-list ( xml-node ) ( ( tag :accessor xml-tag :initform +LIST+ ) ) )
 
 ( ;; FIXME
-   progn ( defgeneric pretty-list-p ( obj ) ) ( defmethod pretty-list-p ( obj ) nil )
+   progn
+ ( defgeneric pretty-list-p
+     ( obj ) )
+ ( defmethod pretty-list-p ( obj ) nil )
  ( defmethod pretty-list-p ( ( obj pretty-list ) ) t ) )
 
 ( defclass pretty-atom ( xml-node ) ( ( tag :accessor xml-tag :initform +ATOM+ ) ) )
 
 ( ;; FIXME
-   progn ( defgeneric pretty-atom-p ( obj ) ) ( defmethod pretty-atom-p ( obj ) nil )
+   progn
+ ( defgeneric pretty-atom-p
+     ( obj ) )
+ ( defmethod pretty-atom-p ( obj ) nil )
  ( defmethod pretty-atom-p ( ( obj pretty-atom ) ) t ) )
 
 ( defclass pretty-descriptor ( xml-node )
@@ -90,9 +96,9 @@
 ( defun pretty-descriptor-p ( obj )
   ( string-equal ( class-name ( class-of obj ) ) "PRETTY-DESCRIPTOR" ) )
 
-( defgeneric xml-to-code-string ( xml )
-            ( :documentation
-             "transforms the code in pretty format to textual code." ) )
+( defgeneric xml-to-code-string
+    ( xml )
+  ( :documentation "transforms the code in pretty format to textual code." ) )
 
 ( defun normalize-token ( token )
   "Compensates for unbalanced big comments, strings
@@ -131,10 +137,10 @@ and specials"
 
 ( defun trim-comment-marks ( comment )
   ( let* ( ( str ( string-trim +COMM-TRIM+ comment ) ) ( len ( length str ) ) )
-   ( if
-    ( and ( > len 3 ) ( eq #\# ( char str 0 ) ) ( eq #\| ( char str 1 ) )
-         ( eq #\| ( char str ( - len 2 ) ) ) ( eq #\# ( char str ( - len 1 ) ) ) )
-    ( subseq str 2 ( - len 2 ) ) str ) ) )
+   ( if ( and ( > len 3 ) ( eq #\# ( char str 0 ) ) ( eq #\| ( char str 1 ) )
+            ( eq #\| ( char str ( - len 2 ) ) ) ( eq #\# ( char str ( - len 1 ) ) ) )
+       ( subseq str 2 ( - len 2 ) )
+       str ) ) )
 
 ( defun possible-list-type ( token )
   "Decides wheter token can be used as a prefix for a list, i.e. some 'list type'
@@ -261,7 +267,8 @@ This function is critical!"
                                        ( list char-current ) ) ) )
                  ( progn
                   ( setf ( getf state :comment-big ) 1 )
-                  ( if ( > ( length ( getf state :concatenation ) ) 1 ) 
+                  ( if ( > ( length ( getf state :concatenation ) ) 1 )
+                      
                       ;; generates a token only if concatenation is not just "#"
                        ( setf ( getf state :token )
                               ( subseq ( getf state :concatenation ) 0
@@ -274,7 +281,8 @@ This function is critical!"
                   ( getf state :comment-big ) )
              ( progn
               ( decf ( getf state :comment-big ) )
-              ( if ( eql 0 ( getf state :comment-big ) ) 
+              ( if ( eql 0 ( getf state :comment-big ) )
+                  
                   ;; comment end here
                    ( progn
                    ( setf ( getf state :comment-big ) nil )
@@ -282,7 +290,8 @@ This function is critical!"
                            ( concatenate 'string ( getf state :concatenation )
                                         ( list char-current ) ) )
                    ( setf ( getf state :concatenation ) nil ) )
-                   
+                  
+                  
                   ;; comment is inserted inside another one
                   ;; continue concatenation of comment
                    ( setf ( getf state :concatenation )
@@ -387,124 +396,114 @@ This function is critical!"
       
       ;; ...end of cond
       ;; update number of dashes
-       ( if ( not ( eq char-current #\\ ) ) ( setf ( getf state :escaped ) nil ) )
+       ( if ( not ( eq char-current #\\ ) )
+          ( setf ( getf state :escaped ) nil ) )
       
       ;; return the new state
        state ) ) )
 
 ( defgeneric parse-with-pretty-node
-            ( node state-previous char-stream &optional top-level ) )
+    ( node state-previous char-stream &optional top-level ) )
 
 ( defmethod parse-with-pretty-node
            ( ( atom-node pretty-atom ) state-previous char-stream &optional
             top-level )
-           ( declare ( ignore top-level ) )
-           ( let ( ( state ) )
-             
-             ;; end of a list, return one level up
-              ( when ( getf state-previous :list-end )
-               ( return-from parse-with-pretty-node state-previous ) )
-             
-             ;; beginning of a list, continue one level deep
-              ( when ( getf state-previous :list-start )
-               ( return-from parse-with-pretty-node
-                ( parse-with-pretty-node ( make-instance 'pretty-list )
-                 state-previous char-stream ) ) )
-             
-             ;; update the new state
-              ( setf state
-                     ( parser-step ( read-char char-stream nil ) state-previous ) )
-             
-             ;; continue according to the new state
-              ( cond 
-                   ;;end of stream
-                    ( ( not state )
-                    ( progn
-                     ( setf ( getf state :eof ) t )
-                     ( when
-                         ( or ( getf state-previous :token )
-                             ( getf state-previous :concatenation ) )
-                       ( setf ( xml-children atom-node )
-                               ( list
-                                ( normalize-token
-                                 ( concatenate 'string
-                                              ( getf state-previous :token )
-                                              ( getf state-previous
-                                                    :concatenation ) ) ) ) )
-                       ( setf ( getf state :node ) atom-node ) ) ) )
-                   
-                   ;; separator, continue parsing
-                    ( ( getf state :separator )
-                    ( setf state
-                            ( parse-with-pretty-node atom-node state
-                             char-stream ) ) )
-                   
-                   ;; there is a token to retrieve, and parentheses ( not  being the current char
-                    ( ( and ( not ( getf state :list-start ) ) ( getf state :token ) )
-                    ( progn
-                     ( setf ( xml-children atom-node )
-                             ( list ( normalize-token ( getf state :token ) ) ) )
-                     ( setf ( getf state :node ) atom-node )
-                     ( setf ( getf state :token ) nil ) ) )
-                   
-                   ;; token to retrieve and parentheses ( found
-                    ( ( and ( getf state :list-start ) ( getf state :token ) )
-                    ( let ( ( list-type ( possible-list-type ( getf state :token ) ) ) )
-                      ( when list-type
-                        ( setf state
-                                ( parse-with-pretty-node atom-node state
-                                 char-stream ) ) )
-                      ( unless list-type
-                        ( progn
-                         ( setf ( xml-children atom-node )
-                                 ( list ( normalize-token ( getf state :token ) ) ) )
-                         ( setf ( getf state :node ) atom-node )
-                         ( setf ( getf state :token ) nil ) ) ) ) )
-                   
-                   ;; continue parsing with the same pretty-atom node
-                    ( t
-                    ( setf state
-                            ( parse-with-pretty-node atom-node state
-                             char-stream ) ) ) )
-             state ) )
+  ( declare ( ignore top-level ) )
+  ( let ( ( state ) )
+    
+    ;; end of a list, return one level up
+     ( when ( getf state-previous :list-end )
+      ( return-from parse-with-pretty-node state-previous ) )
+    
+    ;; beginning of a list, continue one level deep
+     ( when ( getf state-previous :list-start )
+      ( return-from parse-with-pretty-node
+       ( parse-with-pretty-node ( make-instance 'pretty-list ) state-previous
+        char-stream ) ) )
+    
+    ;; update the new state
+     ( setf state ( parser-step ( read-char char-stream nil ) state-previous ) )
+    
+    ;; continue according to the new state
+     ( cond 
+          ;;end of stream
+           ( ( not state )
+           ( progn
+            ( setf ( getf state :eof ) t )
+            ( when
+                ( or ( getf state-previous :token )
+                    ( getf state-previous :concatenation ) )
+              ( setf ( xml-children atom-node )
+                      ( list
+                       ( normalize-token
+                        ( concatenate 'string ( getf state-previous :token )
+                                     ( getf state-previous :concatenation ) ) ) ) )
+              ( setf ( getf state :node ) atom-node ) ) ) )
+          
+          ;; separator, continue parsing
+           ( ( getf state :separator )
+           ( setf state ( parse-with-pretty-node atom-node state char-stream ) ) )
+          
+          ;; there is a token to retrieve, and parentheses ( not  being the current char
+           ( ( and ( not ( getf state :list-start ) ) ( getf state :token ) )
+           ( progn
+            ( setf ( xml-children atom-node )
+                    ( list ( normalize-token ( getf state :token ) ) ) )
+            ( setf ( getf state :node ) atom-node )
+            ( setf ( getf state :token ) nil ) ) )
+          
+          ;; token to retrieve and parentheses ( found
+           ( ( and ( getf state :list-start ) ( getf state :token ) )
+           ( let ( ( list-type ( possible-list-type ( getf state :token ) ) ) )
+             ( when list-type
+               ( setf state
+                       ( parse-with-pretty-node atom-node state char-stream ) ) )
+             ( unless list-type
+               ( progn
+                ( setf ( xml-children atom-node )
+                        ( list ( normalize-token ( getf state :token ) ) ) )
+                ( setf ( getf state :node ) atom-node )
+                ( setf ( getf state :token ) nil ) ) ) ) )
+          
+          ;; continue parsing with the same pretty-atom node
+           ( t
+           ( setf state ( parse-with-pretty-node atom-node state char-stream ) ) ) )
+    state ) )
 
 ( defmethod parse-with-pretty-node
            ( ( list-node pretty-list ) state char-stream &optional
             ( top-level nil ) )
-           "Call recursively parse-with-pretty-atom and 
+  "Call recursively parse-with-pretty-atom and 
 concatenates the result as children of list-node 
 Does not call parser directly."
-           
-           ;; set the list type
-            ( let ( ( list-type ( or ( possible-list-type ( getf state :token ) ) "" ) ) )
-             ( setf ( xml-attributes list-node )
-                     ( list ( cons +LIST-TYPE+ list-type ) ) )
-             
-             ;; token was used to build list type, discard it
-              ( setf ( getf state :token ) nil )
-             
-             
-             ;; need to set :list-start to nil, because
-             ;; parse-with-pretty-atom would loop forever
-              ( setf ( getf state :list-start ) nil )
-             ( loop while ( progn
-                          ( setf state
-                                  ( parse-with-pretty-node
-                                   ( make-instance 'pretty-atom ) state
-                                   char-stream ) )
-                          ( and state ( getf state :node )
-                               ( xml-append-child list-node ( getf state :node ) )
-                               ( not ( getf state :list-end ) )
-                               ( not ( getf state :eof ) ) ) ) )
-             ( setf ( getf state :node ) list-node )
-             
-             
-             ;; need to set :list-end to nil, because
-             ;; parse-with-pretty-atom would loop forever
-              ( and top-level ( getf state :list-end )
-                  ( setf ( getf state :extra-end-parenthesis ) t ) )
-             ( setf ( getf state :list-end ) nil )
-             state ) )
+  
+  ;; set the list type
+   ( let ( ( list-type ( or ( possible-list-type ( getf state :token ) ) "" ) ) )
+    ( setf ( xml-attributes list-node ) ( list ( cons +LIST-TYPE+ list-type ) ) )
+    
+    ;; token was used to build list type, discard it
+     ( setf ( getf state :token ) nil )
+    
+    
+    ;; need to set :list-start to nil, because
+    ;; parse-with-pretty-atom would loop forever
+     ( setf ( getf state :list-start ) nil )
+    ( loop while ( progn
+                 ( setf state
+                         ( parse-with-pretty-node ( make-instance 'pretty-atom )
+                          state char-stream ) )
+                 ( and state ( getf state :node )
+                      ( xml-append-child list-node ( getf state :node ) )
+                      ( not ( getf state :list-end ) ) ( not ( getf state :eof ) ) ) ) )
+    ( setf ( getf state :node ) list-node )
+    
+    
+    ;; need to set :list-end to nil, because
+    ;; parse-with-pretty-atom would loop forever
+     ( and top-level ( getf state :list-end )
+         ( setf ( getf state :extra-end-parenthesis ) t ) )
+    ( setf ( getf state :list-end ) nil )
+    state ) )
 
 ( defun parse-to-pretty-lisp
        ( text-code &key ( input-type :string ) ( for-extension nil ) )
@@ -513,7 +512,8 @@ The input-type of text-code can be :stream or :string"
   ( let (
         ;; accepts input as stream or text
          ( text-stream
-         ( if ( eq input-type :stream ) text-code
+         ( if ( eq input-type :stream )
+             text-code
              ( make-string-input-stream text-code ) ) )
         
         ;; the return list
@@ -526,33 +526,33 @@ The input-type of text-code can be :stream or :string"
                           ( list :char #\Space :separator t :past past )
                           text-stream t ) )
                  ( if for-extension
-                     ( if
-                      ( pretty-atom-p ( car ( xml-children ( getf state :node ) ) ) )
-                      ( progn ( setf past ( getf state :past ) ) )
-                      ( progn
-                       ( if past
-                           ( setf list-pretty-xml
-                                   ( append list-pretty-xml
-                                           ( list
-                                            ( make-instance 'pretty-atom
-                                             :children ( list past ) ) ) ) ) )
-                       ( setf list-pretty-xml
-                               ( append list-pretty-xml
-                                       ( xml-children ( getf state :node ) ) ) )
-                       ( setf past nil )
-                       ( when ( getf state :extra-end-parenthesis )
-                         
-                         
-                         
-                         ;; this is a compensation procedure for unbalenced right parenthesis
-                         ;; results in ( being added to the beginning of file to compensate this extra )
-                         ;; the opposite, adding ) to compensate extra ( is done automatically, since each ( originates a list
+                     ( if ( pretty-atom-p
+                          ( car ( xml-children ( getf state :node ) ) ) )
+                         ( progn ( setf past ( getf state :past ) ) )
+                         ( progn
+                          ( if past
+                              ( setf list-pretty-xml
+                                      ( append list-pretty-xml
+                                              ( list
+                                               ( make-instance 'pretty-atom
+                                                :children ( list past ) ) ) ) ) )
                           ( setf list-pretty-xml
-                                 ( list
-                                  ( make-instance 'pretty-list :children
-                                   list-pretty-xml :attributes
-                                   ( list ( cons +LIST-TYPE+ "" ) ) ) ) ) )
-                       t ) )
+                                  ( append list-pretty-xml
+                                          ( xml-children ( getf state :node ) ) ) )
+                          ( setf past nil )
+                          ( when ( getf state :extra-end-parenthesis )
+                            
+                            
+                            
+                            ;; this is a compensation procedure for unbalenced right parenthesis
+                            ;; results in ( being added to the beginning of file to compensate this extra )
+                            ;; the opposite, adding ) to compensate extra ( is done automatically, since each ( originates a list
+                             ( setf list-pretty-xml
+                                    ( list
+                                     ( make-instance 'pretty-list :children
+                                      list-pretty-xml :attributes
+                                      ( list ( cons +LIST-TYPE+ "" ) ) ) ) ) )
+                          t ) )
                      ( progn
                       ( setf list-pretty-xml
                               ( append list-pretty-xml

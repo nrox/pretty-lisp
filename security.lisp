@@ -49,7 +49,9 @@
   "Messages will be logged here" )
 
 ( defvar *sessions-timeout*
-  ( if *multi-user-demo* ( * 15 60 ) ( * 365 24 3600 ) )
+  ( if *multi-user-demo*
+      ( * 15 60 )
+      ( * 365 24 3600 ) )
   "Session timeout" )
 
 ( defvar *backup-files*
@@ -71,9 +73,11 @@
    '( :cancel :update :cut :copy :paste :delete :before :inside :after :free
     :surround :comment :transpose :collapse :collapseall :expand :expandall
     :left :up :right :down :undo :redo )
-   ( if ( not *multi-user-demo* ) '( :execute ) ) )
+   ( if ( not *multi-user-demo* )
+       '( :execute ) ) )
   "If the editing operation is not in this list it will not be processed." )
 
 ( defvar +allowed-hint-operations+
   ( append '( :complete :search :history :hyperspec :case )
-          ( if ( not *multi-user-demo* ) '( :similar ) ) ) )
+          ( if ( not *multi-user-demo* )
+              '( :similar ) ) ) )

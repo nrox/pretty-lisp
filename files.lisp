@@ -58,8 +58,7 @@
 
 ( defun default-folder ( &optional path )
   ( let ( ( name ( format nil "~A~A" +BK-DIR+ "deffolder.txt" ) ) )
-    ( cond ( path ( write-to-file name path ) )
-          ( ( probe-file name ) ( read-file name ) )
+    ( cond ( path ( write-to-file name path ) ) ( ( probe-file name ) ( read-file name ) )
           ( t ( write-to-file name *DEFAULT-FOLDER* ) *DEFAULT-FOLDER* ) ) ) )
 
 ( setf *DEFAULT-FOLDER* ( default-folder ) )

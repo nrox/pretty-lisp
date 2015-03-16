@@ -60,8 +60,10 @@ must be found in the same folder where package.lisp is" )
 ( mapcar
  #'( lambda ( filename )
    ( let ( ( file-path ( concatenate 'string +source-folder+ filename ".lisp" ) ) )
-     ( if *compile-files* ( load ( namestring ( compile-file file-path ) ) )
+     ( if *compile-files*
+         ( load ( namestring ( compile-file file-path ) ) )
          ( load file-path ) ) ) )
  *source-files* )
 
-( if *auto-start* ( up ) )
+( if *auto-start*
+    ( up ) )

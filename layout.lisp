@@ -88,7 +88,8 @@ the list will assume a vertical layout by default." )
 of a <svg> element."
   ( if ( pretty-atom-p xml )
       ( let* ( ( str ( xml-value xml ) ) ( splitted ( string-split str #\Newline ) ) )
-       ( if ( = 1 ( length splitted ) ) ( list xml )
+       ( if ( = 1 ( length splitted ) )
+           ( list xml )
            ( let ( ( counter -1 )
                  ( y ( read-from-string ( xml-attribute-get xml :y ) ) )
                  ( x ( xml-attribute-get xml :x ) ) )
@@ -113,96 +114,93 @@ of a <svg> element."
           ( setf newlist ( append ( make-svg-children child ) newlist ) ) ) ) ) )
 
 ( defmethod xml-node-to-pretty-node ( ( xml xml-node ) &optional parent )
-           ( let*
-            ( ( tag ( xml-tag xml ) )
-             ( pretty-node
-              ( make-instance
-               ( if ( string-equal tag +LIST+ ) 'pretty-list 'pretty-atom ) ) ) )
-            ( setf ( xml-parent pretty-node )
-                    parent
-                  ( xml-attributes pretty-node )
-                    ( xml-attributes xml )
-                  ( xml-properties pretty-node )
-                    ( xml-properties xml )
-                  ( xml-children pretty-node )
-                    ( mapcar
-                     #'( lambda ( child )
-                       ( xml-node-to-pretty-node child pretty-node ) )
-                     ( xml-children xml ) ) )
-            pretty-node ) )
+  ( let*
+   ( ( tag ( xml-tag xml ) )
+    ( pretty-node
+     ( make-instance
+      ( if ( string-equal tag +LIST+ )
+          'pretty-list
+          'pretty-atom ) ) ) )
+   ( setf ( xml-parent pretty-node ) parent
+         ( xml-attributes pretty-node ) ( xml-attributes xml )
+         ( xml-properties pretty-node ) ( xml-properties xml )
+         ( xml-children pretty-node )
+           ( mapcar #'( lambda ( child ) ( xml-node-to-pretty-node child pretty-node ) )
+                   ( xml-children xml ) ) )
+   pretty-node ) )
 
-( defmethod xml-node-to-pretty-node ( string-node &optional parent ) 
-           ;; TODO use declare ignore
-            ( format nil "~A" ( or string-node parent ) ) )
+( defmethod xml-node-to-pretty-node ( string-node &optional parent )
+  
+  ;; TODO use declare ignore
+   ( format nil "~A" ( or string-node parent ) ) )
 
-( defgeneric size-pretty ( node ) )
+( defgeneric size-pretty
+    ( node ) )
 
-( defgeneric position-pretty ( node ) )
+( defgeneric position-pretty
+    ( node ) )
 
-( defgeneric pretty-layout ( node ) )
+( defgeneric pretty-layout
+    ( node ) )
 
 ( defmethod size-pretty ( ( node xml-node ) )
-           "Returns a list '(width height) in px for the pretty-list/atom"
-           ( declare ( optimize ( speed 3 ) ) )
-           ( let ( ( tam ( xml-property-get node :size ) ) )
-             (  ;; if the size is already set as a property, return it
-                ;; this avoids to compute it down to the last children.
-                 if tam tam
-              ( let ( ( posdim ( list ( list 0 0 0 0 ) ) )
-                    ( margins
-                     ( if ( pretty-atom-p node ) ( list 0 0 )
-                         ( list +MARGIN-X2+ +MARGIN-Y2+ ) ) ) )
-                ( if ( and ( pretty-list-p node ) ( null ( xml-children node ) ) )
-                    ( list ( + +MARGIN-X+ +MARGIN-X2+ )
-                          ( + +MARGIN-Y+ +TEXT-HEIGHT+ +MARGIN-Y2+ ) )
-                    ( dolist
-                        ( child ( xml-children node )
-                               ( mapcar #'+ ( farthest posdim ) margins ) )
-                      ( setf posdim
-                              ( cons
-                               ( append ( size-pretty child )
-                                       ( position-pretty child ) )
-                               posdim ) ) ) ) ) ) ) )
+  "Returns a list '(width height) in px for the pretty-list/atom"
+  ( declare ( optimize ( speed 3 ) ) )
+  ( let ( ( tam ( xml-property-get node :size ) ) )
+    (  ;; if the size is already set as a property, return it
+       ;; this avoids to compute it down to the last children.
+        if tam tam
+     ( let ( ( posdim ( list ( list 0 0 0 0 ) ) )
+           ( margins
+            ( if ( pretty-atom-p node )
+                ( list 0 0 )
+                ( list +MARGIN-X2+ +MARGIN-Y2+ ) ) ) )
+       ( if ( and ( pretty-list-p node ) ( null ( xml-children node ) ) )
+           ( list ( + +MARGIN-X+ +MARGIN-X2+ )
+                 ( + +MARGIN-Y+ +TEXT-HEIGHT+ +MARGIN-Y2+ ) )
+           ( dolist
+               ( child ( xml-children node )
+                      ( mapcar #'+ ( farthest posdim ) margins ) )
+             ( setf posdim
+                     ( cons ( append ( size-pretty child ) ( position-pretty child ) )
+                           posdim ) ) ) ) ) ) ) )
 
-( defmethod size-pretty ( string-node ) ( declare ( optimize ( speed 3 ) ) )
-           ( let ( ( newlines ( count #\Newline string-node ) ) )
-             ( if ( = newlines 0 )
-                 ( list ( * +FACTOR-LEN+ ( length string-node ) ) +TEXT-HEIGHT+ )
-                 ( list
-                  ( * +FACTOR-LEN+
-                   ( apply #'max
-                          ( mapcar #'length
-                                  ( string-split string-node #\Newline ) ) ) )
-                  ( + +TEXT-HEIGHT+
-                   ( * ( + +TEXT-HEIGHT+ +MARGIN-Y+ ) newlines ) ) ) ) ) )
+( defmethod size-pretty ( string-node )
+  ( declare ( optimize ( speed 3 ) ) )
+  ( let ( ( newlines ( count #\Newline string-node ) ) )
+    ( if ( = newlines 0 )
+        ( list ( * +FACTOR-LEN+ ( length string-node ) ) +TEXT-HEIGHT+ )
+        ( list
+         ( * +FACTOR-LEN+
+          ( apply #'max ( mapcar #'length ( string-split string-node #\Newline ) ) ) )
+         ( + +TEXT-HEIGHT+ ( * ( + +TEXT-HEIGHT+ +MARGIN-Y+ ) newlines ) ) ) ) ) )
 
-( defmethod position-pretty ( ( xml xml-node ) ) ( declare ( optimize ( speed 3 ) ) )
-           ( let ( ( pos ( xml-property-get xml :position ) ) )
-             ( if pos pos
-                 ( let ( ( parent ( xml-parent xml ) )
-                       ( list-type-length
-                        ( * +FACTOR-LEN+
-                         ( length ( xml-attribute-get xml :listtype ) ) ) ) )
-                   ( if ( null parent )
-                       ( list ( + list-type-length +MARGIN-X+ ) +FACTOR-H+ )
-                       ( let*
-                        ( ( children ( xml-children parent ) )
-                         ( inib ( pretty-layout parent ) )
-                         ( idx ( position xml children ) ) )
-                        ( when ( > list-type-length 0 )
-                          ( incf list-type-length +margin-list-desc+ ) )
-                        ( if ( = idx 0 )
-                            ( list ( + list-type-length +MARGIN-X+ ) +MARGIN-Y+ )
-                            ( mapcar #'+
-                                    ( mapcar #'* inib
-                                            ( mapcar #'+
-                                                    ( position-pretty
-                                                     ( nth ( - idx 1 ) children ) )
-                                                    ( size-pretty
-                                                     ( nth ( - idx 1 )
-                                                          children ) ) ) )
-                                    ( list +MARGIN-X+ +MARGIN-Y+ )
-                                    ( list list-type-length 0 ) ) ) ) ) ) ) ) )
+( defmethod position-pretty ( ( xml xml-node ) )
+  ( declare ( optimize ( speed 3 ) ) )
+  ( let ( ( pos ( xml-property-get xml :position ) ) )
+    ( if pos
+        pos
+        ( let ( ( parent ( xml-parent xml ) )
+              ( list-type-length
+               ( * +FACTOR-LEN+ ( length ( xml-attribute-get xml :listtype ) ) ) ) )
+          ( if ( null parent )
+              ( list ( + list-type-length +MARGIN-X+ ) +FACTOR-H+ )
+              ( let*
+               ( ( children ( xml-children parent ) ) ( inib ( pretty-layout parent ) )
+                ( idx ( position xml children ) ) )
+               ( when ( > list-type-length 0 )
+                 ( incf list-type-length +margin-list-desc+ ) )
+               ( if ( = idx 0 )
+                   ( list ( + list-type-length +MARGIN-X+ ) +MARGIN-Y+ )
+                   ( mapcar #'+
+                           ( mapcar #'* inib
+                                   ( mapcar #'+
+                                           ( position-pretty
+                                            ( nth ( - idx 1 ) children ) )
+                                           ( size-pretty
+                                            ( nth ( - idx 1 ) children ) ) ) )
+                           ( list +MARGIN-X+ +MARGIN-Y+ )
+                           ( list list-type-length 0 ) ) ) ) ) ) ) ) )
 
 ( defmethod position-pretty ( string-node ) '( 0 0 ) )
 
@@ -219,7 +217,9 @@ of a <svg> element."
 ( defun is-defclass-parameter-list ( node )
   ( when ( pretty-list-p node )
     ( let ( ( parent node ) )
-      ( dotimes ( i 2 ) ( if parent ( setf parent ( xml-parent parent ) ) ) )
+      ( dotimes ( i 2 )
+        ( if parent
+            ( setf parent ( xml-parent parent ) ) ) )
       ( if ( and parent ( pretty-atom-p ( car ( xml-children parent ) ) ) )
           ( equalp "defclass" ( xml-value ( car ( xml-children parent ) ) ) ) ) ) ) )
 
@@ -228,7 +228,9 @@ of a <svg> element."
     ( let*
      ( ( parent ( xml-parent node ) )
       ( siblings
-       ( if parent ( xml-children parent ) ( return-from is-arguments-list nil ) ) )
+       ( if parent
+           ( xml-children parent )
+           ( return-from is-arguments-list nil ) ) )
       ( helder-text
        ( and ( pretty-atom-p ( car siblings ) ) ( xml-value ( car siblings ) ) ) ) )
      ( and ( = ( position node siblings ) 2 )
@@ -238,77 +240,74 @@ of a <svg> element."
 
 ( defmethod pretty-layout ( node ) '( 1 0 ) )
 
-( defmethod pretty-layout ( ( node pretty-list ) ) ( declare ( optimize ( speed 3 ) ) )
-           ( let ( ( v '( 0 1 ) )
-                 ( h '( 1 0 ) )
-                 ( child ( car ( xml-children node ) ) )
-                 ( child-text nil )
-                 ( cur-lay ( xml-property-get node :layout ) ) )
-             ( if ( pretty-atom-p child ) ( setf child-text ( xml-value child ) ) )
-             ( cond  ;; if the layout is user defined
-                     ( cur-lay cur-lay ) ( ( equalp child-text "#|v|#" ) v )
-                   ( ( equalp child-text "#|h|#" ) h )  ;; if first child is a list
-                                                     ( ( pretty-list-p child ) v )
-                   ( ( find child-text +horizontal-helders+ :test #'string-equal )
-                    h )
-                   
-                   ;; only atoms, strings and numbers of elements inside list is small: horizontal
-                    ( ( and ( only-pretty-atoms node )
-                         ( < ( length ( xml-children node ) ) 5 ) )
-                    h )
-                   
-                   ;; if the first element of the list is one of these: vertical
-                    ( ( find child-text +vertical-helders+ :test #'string-equal )
-                    v )
-                    ;; for classes
-                     ( ( is-defclass-parameter-list node ) h ) 
-                   ;; arguments list
-                    ( ( is-arguments-list node ) h ) 
-                   ;; comments as the first element inside the list: vertical
-                    ( ( and ( > ( length child-text ) 0 )
-                         ( string= ";" ( subseq child-text 0 1 ) ) )
-                    v )
-                    ;; if there are only lists: vertical
-                     ( ( only-pretty-lists node ) v ) 
-                   ;; only atoms, strings and numbers of elements inside list is small: horizontal
-                    ( ( and ( only-pretty-atoms node )
-                         ( < ( length ( xml-children node ) ) 10 ) )
-                    h )
-                   
-                   ;; with-output-to-string, with... etc
-                    ( ( > ( mismatch child-text "with'" :test #'string-equal ) 3 ) v )
-                    ;; if the number of elements is small, horizontal
-                     ( ( < ( length ( xml-children node ) ) 4 ) h )  ;; default: vertical
-                                                             ( t v ) ) ) )
+( defmethod pretty-layout ( ( node pretty-list ) )
+  ( declare ( optimize ( speed 3 ) ) )
+  ( let ( ( v '( 0 1 ) )
+        ( h '( 1 0 ) )
+        ( child ( car ( xml-children node ) ) )
+        ( child-text nil )
+        ( cur-lay ( xml-property-get node :layout ) ) )
+    ( if ( pretty-atom-p child )
+        ( setf child-text ( xml-value child ) ) )
+    ( cond  ;; if the layout is user defined
+            ( cur-lay cur-lay ) ( ( equalp child-text "#|v|#" ) v )
+          ( ( equalp child-text "#|h|#" ) h )  ;; if first child is a list
+                                            ( ( pretty-list-p child ) v )
+          ( ( find child-text +horizontal-helders+ :test #'string-equal ) h ) 
+          ;; only atoms, strings and numbers of elements inside list is small: horizontal
+           ( ( and ( only-pretty-atoms node ) ( < ( length ( xml-children node ) ) 5 ) ) h )
+           ;; if the first element of the list is one of these: vertical
+            ( ( find child-text +vertical-helders+ :test #'string-equal ) v ) 
+          ;; for classes
+           ( ( is-defclass-parameter-list node ) h )  ;; arguments list
+                                                  ( ( is-arguments-list node ) h )
+          
+          ;; comments as the first element inside the list: vertical
+           ( ( and ( > ( length child-text ) 0 )
+                ( string= ";" ( subseq child-text 0 1 ) ) )
+           v )
+           ;; if there are only lists: vertical
+            ( ( only-pretty-lists node ) v ) 
+          ;; only atoms, strings and numbers of elements inside list is small: horizontal
+           ( ( and ( only-pretty-atoms node ) ( < ( length ( xml-children node ) ) 10 ) )
+           h )
+           ;; with-output-to-string, with... etc
+            ( ( > ( mismatch child-text "with'" :test #'string-equal ) 3 ) v ) 
+          ;; if the number of elements is small, horizontal
+           ( ( < ( length ( xml-children node ) ) 4 ) h )  ;; default: vertical
+                                                   ( t v ) ) ) )
 
-( defgeneric remove-all-positioning-properties ( xml ) )
+( defgeneric remove-all-positioning-properties
+    ( xml ) )
 
 ( defmethod remove-all-positioning-properties ( a-string ) )
 
 ( defmethod remove-all-positioning-properties ( ( xml xml-node ) )
-           ( dolist ( par '( :position :size :layout ) nil )
-             ( xml-property-set xml par nil ) )
-           ( mapcar #'remove-all-positioning-properties ( xml-children xml ) ) xml )
+  ( dolist ( par '( :position :size :layout ) nil ) ( xml-property-set xml par nil ) )
+  ( mapcar #'remove-all-positioning-properties ( xml-children xml ) )
+  xml )
 
-( defgeneric set-all-positioning-properties ( xml ) )
+( defgeneric set-all-positioning-properties
+    ( xml ) )
 
 ( defmethod set-all-positioning-properties ( xml ) )
 
 ( defmethod set-all-positioning-properties ( ( xml xml-node ) )
-           ( mapcar #'set-all-positioning-properties ( xml-children xml ) )
-           ( xml-property-set xml :layout ( pretty-layout xml ) )
-           ( xml-property-set xml :size ( size-pretty xml ) )
-           ( xml-property-set xml :position ( position-pretty xml ) ) )
+  ( mapcar #'set-all-positioning-properties ( xml-children xml ) )
+  ( xml-property-set xml :layout ( pretty-layout xml ) )
+  ( xml-property-set xml :size ( size-pretty xml ) )
+  ( xml-property-set xml :position ( position-pretty xml ) ) )
 
-( defgeneric set-predefined-layout ( xml ) )
+( defgeneric set-predefined-layout
+    ( xml ) )
 
 ( defmethod set-predefined-layout ( str ) )
 
 ( defmethod set-predefined-layout ( ( xml pretty-list ) )
-           ( if ( xml-attribute-get xml :layout )
-               ( xml-property-set xml :layout
-                ( read-from-string ( xml-attribute-get xml :layout ) ) ) )
-           ( mapcar #'set-predefined-layout ( xml-children xml ) ) )
+  ( if ( xml-attribute-get xml :layout )
+      ( xml-property-set xml :layout
+       ( read-from-string ( xml-attribute-get xml :layout ) ) ) )
+  ( mapcar #'set-predefined-layout ( xml-children xml ) ) )
 
 ( defun set-events-helper ( xml )
   ( declare ( optimize ( speed 3 ) ) )
@@ -316,18 +315,22 @@ of a <svg> element."
    ( format nil "~A('~A','~A')" +EVENT-FUN+ ( xml-attribute-get xml :roxid )
            "dblclick" ) ) )
 
-( defgeneric set-events ( xml ) )
+( defgeneric set-events
+    ( xml ) )
 
 ( defmethod set-events ( obj ) ( and ( consp obj ) ( mapcar #'set-events obj ) ) )
 
-( defmethod set-events ( ( xml pretty-list ) ) ( set-events-helper xml )
-           ( mapcar #'set-events ( xml-children xml ) ) )
+( defmethod set-events ( ( xml pretty-list ) )
+  ( set-events-helper xml )
+  ( mapcar #'set-events ( xml-children xml ) ) )
 
 ( defmethod set-events ( ( xml pretty-atom ) ) ( set-events-helper xml ) )
 
-( defgeneric set-pretty-dimensions ( xml ) )
+( defgeneric set-pretty-dimensions
+    ( xml ) )
 
-( defgeneric set-absolute-pretty-dimensions ( string-node ) )
+( defgeneric set-absolute-pretty-dimensions
+    ( string-node ) )
 
 ( defun get-hyperspec ( )
   ( unless +HYPERSPEC+
@@ -343,101 +346,103 @@ of a <svg> element."
       ( setf +HYPERSPEC+ hyper ) ) )
   +HYPERSPEC+ )
 
-( defgeneric set-atom-classes ( obj ) )
+( defgeneric set-atom-classes
+    ( obj ) )
 
 ( defmethod set-atom-classes ( obj )
-           ( and ( consp obj ) ( mapcar #'set-atom-classes obj ) ) )
+  ( and ( consp obj ) ( mapcar #'set-atom-classes obj ) ) )
 
 ( defmethod set-atom-classes ( ( xml pretty-list ) )
-           ( mapcar #'set-atom-classes ( xml-children xml ) ) )
+  ( mapcar #'set-atom-classes ( xml-children xml ) ) )
 
 ( defun append-new-to-string ( original new )
-  ( if ( search new original :test #'equalp ) original
+  ( if ( search new original :test #'equalp )
+      original
       ( format nil "~A ~A" original new ) ) )
 
-( defmethod set-atom-classes ( ( xml pretty-atom ) ) ( declare ( optimize ( speed 3 ) ) )
-           ( let*
-            ( ( txt ( car ( xml-children xml ) ) ) ( txt2 ( string-trim "#'" txt ) )
-             ( hyper ( get-hyperspec ) )
-             ( cur-classes ( or ( xml-attribute-get xml :class ) "" ) ) )
-            ( cond
-             ( ( string-equal txt "nil" )
-              ( setf cur-classes ( append-new-to-string cur-classes "nil" ) ) )
-             ( ( gethash ( format-and-ucase txt2 ) hyper )
-              ( setf cur-classes
-                      ( append-new-to-string cur-classes "hyperspec" ) ) )
-             ( ( and ( > ( length txt ) 0 ) ( char= #\: ( char txt 0 ) ) )
-              ( setf cur-classes ( append-new-to-string cur-classes "keyword" ) ) )
-             ( ( and ( > ( length txt ) 0 ) ( char= #\" ( char txt 0 ) ) )
-              ( setf cur-classes ( append-new-to-string cur-classes "string" ) ) )
-             ( ( or ( and ( > ( length txt ) 0 ) ( char= ( char txt 0 ) #\; ) )
-                  ( and ( > ( length txt ) 1 ) ( char= ( char txt 0 ) #\# )
-                       ( char= ( char txt 1 ) #\| ) ) )
-              ( setf cur-classes ( append-new-to-string cur-classes "comment" ) ) )
-             ( ( ignore-errors ( numberp ( read-from-string txt ) ) )
-              ( setf cur-classes ( append-new-to-string cur-classes "number" ) ) ) )
-            ( xml-attribute-set xml :class ( string-trim " " cur-classes ) ) ) )
+( defmethod set-atom-classes ( ( xml pretty-atom ) )
+  ( declare ( optimize ( speed 3 ) ) )
+  ( let*
+   ( ( txt ( car ( xml-children xml ) ) ) ( txt2 ( string-trim "#'" txt ) )
+    ( hyper ( get-hyperspec ) )
+    ( cur-classes ( or ( xml-attribute-get xml :class ) "" ) ) )
+   ( cond
+    ( ( string-equal txt "nil" )
+     ( setf cur-classes ( append-new-to-string cur-classes "nil" ) ) )
+    ( ( gethash ( format-and-ucase txt2 ) hyper )
+     ( setf cur-classes ( append-new-to-string cur-classes "hyperspec" ) ) )
+    ( ( and ( > ( length txt ) 0 ) ( char= #\: ( char txt 0 ) ) )
+     ( setf cur-classes ( append-new-to-string cur-classes "keyword" ) ) )
+    ( ( and ( > ( length txt ) 0 ) ( char= #\" ( char txt 0 ) ) )
+     ( setf cur-classes ( append-new-to-string cur-classes "string" ) ) )
+    ( ( or ( and ( > ( length txt ) 0 ) ( char= ( char txt 0 ) #\; ) )
+         ( and ( > ( length txt ) 1 ) ( char= ( char txt 0 ) #\# )
+              ( char= ( char txt 1 ) #\| ) ) )
+     ( setf cur-classes ( append-new-to-string cur-classes "comment" ) ) )
+    ( ( ignore-errors ( numberp ( read-from-string txt ) ) )
+     ( setf cur-classes ( append-new-to-string cur-classes "number" ) ) ) )
+   ( xml-attribute-set xml :class ( string-trim " " cur-classes ) ) ) )
 
 ( defmethod process-dimensioning ( a-string ) )
 
 ( defmethod process-dimensioning ( ( xml xml-node ) )
-           ( remove-all-positioning-properties xml ) ( set-predefined-layout xml )
-           ( set-all-positioning-properties xml )
-           ( setf xml ( set-pretty-dimensions xml ) )
-           ( setf xml ( set-absolute-pretty-dimensions xml ) )
-           ( set-atom-classes xml ) ( set-events xml ) xml )
+  ( remove-all-positioning-properties xml )
+  ( set-predefined-layout xml )
+  ( set-all-positioning-properties xml )
+  ( setf xml ( set-pretty-dimensions xml ) )
+  ( setf xml ( set-absolute-pretty-dimensions xml ) )
+  ( set-atom-classes xml )
+  ( set-events xml )
+  xml )
 
 ( defmethod set-id-all-family ( str &optional overwrite )
-           ( declare ( ignore str overwrite ) ) )
+  ( declare ( ignore str overwrite ) ) )
 
 ( defmethod set-id-all-family ( ( xml xml-node ) &optional ( overwrite t ) )
-           ( xml-id-set xml :roxid overwrite )
-           ( mapcar #'( lambda ( c ) ( set-id-all-family c overwrite ) )
-                   ( xml-children xml ) ) )
+  ( xml-id-set xml :roxid overwrite )
+  ( mapcar #'( lambda ( c ) ( set-id-all-family c overwrite ) ) ( xml-children xml ) ) )
 
 ( defmethod set-pretty-dimensions ( string-node ) )
 
 ( defmethod set-pretty-dimensions ( ( xml xml-node ) )
-           ( let ( ( pos ( position-pretty xml ) )
-                 ( tam ( size-pretty xml ) )
-                 ( is-atom ( pretty-atom-p xml ) )
-                 ( is-list ( pretty-list-p xml ) ) )
-             ( xml-id-set xml :roxid nil )
-             ( when ( xml-parent xml )
-               ( xml-attribute-set xml :parent
-                ( xml-attribute-get ( xml-parent xml ) :roxid ) ) )
-             ( xml-attribute-set xml :x ( format nil "~A" ( first pos ) ) )
-             ( xml-attribute-set xml :y ( format nil "~A" ( second pos ) ) )
-             ( xml-attribute-set xml :width ( format nil "~A" ( first tam ) ) )
-             ( xml-attribute-set xml :height ( format nil "~A" ( second tam ) ) )
-             ( when is-list
-               ( xml-attribute-set xml :rx +RX+ )
-               ( xml-attribute-set xml :ry +RY+ ) )
-             ( when is-atom
-               ( xml-attribute-set xml :textlength
-                ( format nil "~A" ( first tam ) ) ) )
-             ( mapcar #'set-pretty-dimensions ( xml-children xml ) )
-             xml ) )
+  ( let ( ( pos ( position-pretty xml ) )
+        ( tam ( size-pretty xml ) )
+        ( is-atom ( pretty-atom-p xml ) )
+        ( is-list ( pretty-list-p xml ) ) )
+    ( xml-id-set xml :roxid nil )
+    ( when ( xml-parent xml )
+      ( xml-attribute-set xml :parent
+       ( xml-attribute-get ( xml-parent xml ) :roxid ) ) )
+    ( xml-attribute-set xml :x ( format nil "~A" ( first pos ) ) )
+    ( xml-attribute-set xml :y ( format nil "~A" ( second pos ) ) )
+    ( xml-attribute-set xml :width ( format nil "~A" ( first tam ) ) )
+    ( xml-attribute-set xml :height ( format nil "~A" ( second tam ) ) )
+    ( when is-list
+      ( xml-attribute-set xml :rx +RX+ )
+      ( xml-attribute-set xml :ry +RY+ ) )
+    ( when is-atom
+      ( xml-attribute-set xml :textlength ( format nil "~A" ( first tam ) ) ) )
+    ( mapcar #'set-pretty-dimensions ( xml-children xml ) )
+    xml ) )
 
 ( defmethod set-absolute-pretty-dimensions ( string-node ) )
 
 ( defmethod set-absolute-pretty-dimensions ( ( xml xml-node ) )
-           ( let ( ( parent-x 0 )
-                 ( parent-y 0 )
-                 ( parent ( xml-parent xml ) )
-                 ( x ( read-from-string ( xml-attribute-get xml :x ) ) )
-                 ( y ( read-from-string ( xml-attribute-get xml :y ) ) ) )
-             ( when parent
-               ( setf parent-x
-                       ( read-from-string ( xml-attribute-get parent :x ) )
-                     parent-y
-                       ( read-from-string ( xml-attribute-get parent :y ) ) ) )
-             ( setf x ( + x parent-x ) y ( + y parent-y ) )
-             ( when ( pretty-atom-p xml ) ( setf y ( + y +TEXT-HEIGHT+ ) ) )
-             ( xml-attribute-set xml :x ( format nil "~A" x ) )
-             ( xml-attribute-set xml :y ( format nil "~A" y ) )
-             ( mapcar #'set-absolute-pretty-dimensions ( xml-children xml ) )
-             xml ) )
+  ( let ( ( parent-x 0 )
+        ( parent-y 0 )
+        ( parent ( xml-parent xml ) )
+        ( x ( read-from-string ( xml-attribute-get xml :x ) ) )
+        ( y ( read-from-string ( xml-attribute-get xml :y ) ) ) )
+    ( when parent
+      ( setf parent-x ( read-from-string ( xml-attribute-get parent :x ) )
+            parent-y ( read-from-string ( xml-attribute-get parent :y ) ) ) )
+    ( setf x ( + x parent-x )
+          y ( + y parent-y ) )
+    ( when ( pretty-atom-p xml ) ( setf y ( + y +TEXT-HEIGHT+ ) ) )
+    ( xml-attribute-set xml :x ( format nil "~A" x ) )
+    ( xml-attribute-set xml :y ( format nil "~A" y ) )
+    ( mapcar #'set-absolute-pretty-dimensions ( xml-children xml ) )
+    xml ) )
 
 ( defun insert-list-type ( svg-list )
   ( declare ( optimize ( speed 3 ) ) )
@@ -467,39 +472,35 @@ of a <svg> element."
         ( push xml-type-desc ret-svg-list ) ) ) ) )
 
 ( defmethod wrap-with-root-svg ( svg )
-           "surround the element with a svg node and a basis rect"
-           ( let ( ( width ( xml-attribute-get svg :width ) )
-                 ( height ( xml-attribute-get svg :height ) )
-                 ( x ( xml-attribute-get svg :x ) )
-                 ( y ( xml-attribute-get svg :y ) )
-                 ( id ( format nil "svg~A" ( xml-attribute-get svg :roxid ) ) )
-                 ( mainrect nil ) )
-             ( if ( pretty-list-p svg )
-                 ( setf mainrect
-                         ( list
-                          ( make-instance 'xml-node :tag "rect" :attributes
-                           ( list ( cons :x x ) ( cons :y y ) ( cons :width width )
-                                 ( cons :height height ) ( cons :rx +RX+ )
-                                 ( cons :ry +RY+ ) ( cons :class "mainrect" ) ) ) ) ) )
-             ( setf width
-                     ( + +MARGIN-X+ ( read-from-string width )
-                      ( read-from-string x ) ) )
-             ( setf height
-                     ( + +MARGIN-Y+ ( read-from-string height )
-                      ( read-from-string y ) ) )
-             ( setf svg ( reverse ( make-svg-children svg ) ) )
-             ( setf svg ( insert-list-type svg ) )
-             ( setf svg
-                     ( make-instance 'xml-node :tag "svg" :children
-                      ( append mainrect svg ) ) )
-             ( xml-attribute-set svg :xmlns "http://www.w3.org/2000/svg" )
-             ( xml-attribute-set svg :version "1.1" )
-             ( xml-attribute-set svg :id id )
-             ( xml-attribute-set svg :x "0" )
-             ( xml-attribute-set svg :y "0" )
-             ( xml-attribute-set svg :height ( format nil "~A" height ) )
-             ( xml-attribute-set svg :width ( format nil "~A" width ) ) )
-           svg )
+  "surround the element with a svg node and a basis rect"
+  ( let ( ( width ( xml-attribute-get svg :width ) )
+        ( height ( xml-attribute-get svg :height ) )
+        ( x ( xml-attribute-get svg :x ) )
+        ( y ( xml-attribute-get svg :y ) )
+        ( id ( format nil "svg~A" ( xml-attribute-get svg :roxid ) ) )
+        ( mainrect nil ) )
+    ( if ( pretty-list-p svg )
+        ( setf mainrect
+                ( list
+                 ( make-instance 'xml-node :tag "rect" :attributes
+                  ( list ( cons :x x ) ( cons :y y ) ( cons :width width )
+                        ( cons :height height ) ( cons :rx +RX+ ) ( cons :ry +RY+ )
+                        ( cons :class "mainrect" ) ) ) ) ) )
+    ( setf width ( + +MARGIN-X+ ( read-from-string width ) ( read-from-string x ) ) )
+    ( setf height ( + +MARGIN-Y+ ( read-from-string height ) ( read-from-string y ) ) )
+    ( setf svg ( reverse ( make-svg-children svg ) ) )
+    ( setf svg ( insert-list-type svg ) )
+    ( setf svg
+            ( make-instance 'xml-node :tag "svg" :children
+             ( append mainrect svg ) ) )
+    ( xml-attribute-set svg :xmlns "http://www.w3.org/2000/svg" )
+    ( xml-attribute-set svg :version "1.1" )
+    ( xml-attribute-set svg :id id )
+    ( xml-attribute-set svg :x "0" )
+    ( xml-attribute-set svg :y "0" )
+    ( xml-attribute-set svg :height ( format nil "~A" height ) )
+    ( xml-attribute-set svg :width ( format nil "~A" width ) ) )
+  svg )
 
 ( defun parse-pretty-atom-2 ( xml )
   
@@ -521,14 +522,13 @@ of a <svg> element."
 ( defmethod parse-pretty-atom ( xml ) ( list xml ) )
 
 ( defmethod parse-pretty-atom ( ( xml pretty-atom ) )
-           ( let ( ( str ( xml-value xml ) ) )
-             ( setf str ( ignore-errors ( code-string-to-xml str ) ) )
-             ( cond ( ( consp str ) ( mapcar #'xml-node-to-pretty-node str ) )  
-                   ;; FIXME remove because the parsing should return
-                   ;; always a list
-                    ( ( and ( xml-node-p str )
-                         ( setf str ( xml-node-to-pretty-node str ) )
-                         ( pretty-list-p str ) )
-                    ( xml-children str ) )
-                    ;; in case of error
-                     ( t ( parse-pretty-atom-2 xml ) ) ) ) )
+  ( let ( ( str ( xml-value xml ) ) )
+    ( setf str ( ignore-errors ( code-string-to-xml str ) ) )
+    ( cond ( ( consp str ) ( mapcar #'xml-node-to-pretty-node str ) )  
+          ;; FIXME remove because the parsing should return
+          ;; always a list
+           ( ( and ( xml-node-p str ) ( setf str ( xml-node-to-pretty-node str ) )
+                ( pretty-list-p str ) )
+           ( xml-children str ) )
+           ;; in case of error
+            ( t ( parse-pretty-atom-2 xml ) ) ) ) )

@@ -120,7 +120,8 @@ showing server internal errors." ) )
   "takes the multiple value list resulting from ignore-erros and retrieve the car if the length is 1
   otherwise a xml node having a child as a print of the error"
   ( declare ( ignore xml ) )
-  ( if ( = 1 ( length resp ) ) ( car resp )
+  ( if ( = 1 ( length resp ) )
+      ( car resp )
       ( js-predefined "alert"
        ( format nil "Lisp side ERROR: ~{~A~}"
                ( list #\Newline #\Newline ( first resp ) #\Newline #\Newline
@@ -191,7 +192,8 @@ Such a xml request looks like this:
    ( let ( ;; this is a global variable
           ( *ID-COUNTER* 0 ) )
     ( make-instance 'xml-node :tag +response-tag+ :children
-     ( if *debug-ext* ( list ( chromex xml ) )
+     ( if *debug-ext*
+         ( list ( chromex xml ) )
          ( list
           ( filter-errors ( multiple-value-list ( ignore-errors ( chromex xml ) ) )
            xml ) ) ) ) ) )
@@ -212,7 +214,8 @@ The request is forwarded to the proper function."
   ( xml-to-string
    ( forward-request
     ( xml-parse-from-string
-     ( if ( stringp xmldata ) xmldata
+     ( if ( stringp xmldata )
+         xmldata
          ( octets-to-string xmldata :external-format :utf-8 ) ) ) ) ) )
 
 ( defclass pretty-lisp-acceptor ( easy-acceptor ) ( )

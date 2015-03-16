@@ -36,11 +36,13 @@
 
 ( defun set-as-focus-element ( xml )
   "sets a focus mark on the xml element."
-  ( if ( xml-node-p xml ) ( xml-attribute-set xml :focus "focus" ) ) )
+  ( if ( xml-node-p xml )
+      ( xml-attribute-set xml :focus "focus" ) ) )
 
 ( defun remove-as-focus-element ( xml )
   "remove the focus mark from the xml element."
-  ( if ( xml-node-p xml ) ( xml-attribute-set xml :focus nil ) ) )
+  ( if ( xml-node-p xml )
+      ( xml-attribute-set xml :focus nil ) ) )
 
 ( defun get-focus-element ( editing-nodes )
   "get the element which has the focus."
@@ -49,7 +51,10 @@
 ( defun navigate ( elem parent editing-nodes operation )
   "navigating trough nodes with arrow keys, or other key combinations."
   ( let*
-   ( ( siblings ( if parent ( xml-children parent ) editing-nodes ) )
+   ( ( siblings
+     ( if parent
+         ( xml-children parent )
+         editing-nodes ) )
     ( pos ( position elem siblings ) ) ( len ( length siblings ) )
     ( prev-sibling ( nth ( mod ( 1- pos ) len ) siblings ) )
     ( next-sibling ( nth ( mod ( 1+ pos ) len ) siblings ) )
@@ -76,38 +81,43 @@
 ( defun minimize-and-expand ( previous-response ancestor editing-nodes operation )
   "Changing the container height to have some kind of code-colapse and code-expand
 To only one container or all of them"
-  ( if
-   ( find operation '( :collapse :collapseall :expand :expandall ) :test
-         #'string-equal )
-   ( let*
-    ( ( only-one ( find operation '( :collapse :expand ) :test #'string-equal ) )
-     ( to-process ( if only-one ( list ancestor ) editing-nodes ) ) )
-    ( wrap
-     ( cons previous-response
-           ( mapcar
-            #'( lambda ( node )
-              ( jquery-2 ( format nil "#svg~A" ( xml-attribute-get node :roxid ) )
-               "attr" "height"
-               ( format nil "~A"
-                       ( if
-                        ( find operation '( :collapse :collapseall ) :test
-                              #'string-equal )
-                        ( min 70
-                             ( + +FACTOR-H+
-                              ( read-from-string
-                               ( xml-attribute-get node :height ) ) ) )
-                        ( + 1 +MARGIN-Y+
-                         ( read-from-string ( xml-attribute-get node :height ) )
-                         ( read-from-string ( xml-attribute-get node :y ) ) ) ) ) ) )
-            to-process ) ) ) )
-   previous-response ) )
+  ( if ( find operation '( :collapse :collapseall :expand :expandall ) :test
+            #'string-equal )
+      ( let*
+       ( ( only-one ( find operation '( :collapse :expand ) :test #'string-equal ) )
+        ( to-process
+         ( if only-one
+             ( list ancestor )
+             editing-nodes ) ) )
+       ( wrap
+        ( cons previous-response
+              ( mapcar
+               #'( lambda ( node )
+                 ( jquery-2
+                  ( format nil "#svg~A" ( xml-attribute-get node :roxid ) ) "attr"
+                  "height"
+                  ( format nil "~A"
+                          ( if ( find operation '( :collapse :collapseall ) :test
+                                    #'string-equal )
+                              ( min 70
+                                   ( + +FACTOR-H+
+                                    ( read-from-string
+                                     ( xml-attribute-get node :height ) ) ) )
+                              ( + 1 +MARGIN-Y+
+                               ( read-from-string
+                                ( xml-attribute-get node :height ) )
+                               ( read-from-string
+                                ( xml-attribute-get node :y ) ) ) ) ) ) )
+               to-process ) ) ) )
+      previous-response ) )
 
-( defgeneric make-triggered-event ( obj evtType ) )
+( defgeneric make-triggered-event
+    ( obj evtType ) )
 
 ( defmethod make-triggered-event ( obj evtType ) )
 
 ( defmethod make-triggered-event ( ( xml xml-node ) evtType )
-           ( js-predefined "roxEvent" ( xml-attribute-get xml :roxid ) evtType ) )
+  ( js-predefined "roxEvent" ( xml-attribute-get xml :roxid ) evtType ) )
 
 ( defun transpose-layout ( event-element )
   "Switches the layout of the list {horizontal, vertical}.
@@ -118,7 +128,8 @@ The internal representation is a list { (0 1), (1 0) }"
     
     ;; The attribute is a string. Need to convert to a list
     ;; If the layout is not user-defined get the default
-     ( if layout ( setf layout ( read-from-string layout ) )
+     ( if layout
+        ( setf layout ( read-from-string layout ) )
         ( setf layout ( pretty-layout event-element ) ) )
     
     ;; the transposition is the simple reverse of the layout
@@ -136,7 +147,10 @@ so that tha comment words are changed to code"
   ( let ( ( freed-elements ) ( insert-position ) )
     ( when ( string-equal :atom eltype )
       ( let ( ( text ( trim-comment-marks ( xml-value event-element ) ) ) )
-        ( xml-value-set event-element ( if text text "" ) )
+        ( xml-value-set event-element
+         ( if text
+             text
+             "" ) )
         ( setf freed-elements ( parse-pretty-atom event-element ) ) ) )
     ( when ( string-equal :list eltype )
       ( setf freed-elements ( xml-children event-element ) ) )
@@ -243,8 +257,10 @@ so that tha comment words are changed to code"
      ( make-instance 'pretty-atom :children ( list text ) :attributes
       ( list ( cons :class +CLASS-ATOM+ ) ( cons :type +CLASS-ATOM+ ) ) :parent
       parent ) ) )
-    ;; if the event-element has a parent, replace the event-element with the generated comment
-     ( if parent ( setf ( nth pos ( xml-children parent ) ) commented-element ) )
+   
+   ;; if the event-element has a parent, replace the event-element with the generated comment
+    ( if parent
+       ( setf ( nth pos ( xml-children parent ) ) commented-element ) )
    commented-element ) )
 
 ( defun surround-element ( event-element parent siblings )
@@ -279,7 +295,9 @@ so that tha comment words are changed to code"
       ( setf ( xml-children event-element ) ( list "#||#" ) )
       ( set-as-focus-element event-element ) )
     ( when ( and parent ( find operation '( :before :after ) :test #'string-equal ) )
-      ( if ( string-equal :before operation ) ( setf insert-position pos ) 
+      ( if ( string-equal :before operation )
+          ( setf insert-position pos )
+          
           ;; else :after
            ( setf insert-position ( + 1 pos ) ) )
       ( setf ( xml-children parent )
@@ -291,7 +309,8 @@ so that tha comment words are changed to code"
              ( find operation '( :after :before ) :test #'string-equal ) )
       ( set-as-focus-element newatom )
       ( setf insert-position ( position event-element editing-nodes ) )
-      ( if ( string-equal operation :after ) ( incf insert-position ) )
+      ( if ( string-equal operation :after )
+          ( incf insert-position ) )
       ( setf editing-nodes
               ( append ( subseq editing-nodes 0 insert-position ) ( list newatom )
                       ( subseq editing-nodes insert-position ) ) ) )
@@ -345,14 +364,19 @@ The xml has the example form:
      ( parent ( xml-parent event-element ) )  
     ;; if the parent (list) exists,
     ;;the siblings are other elements inside the parent (list)
-     ( siblings ( if parent ( xml-children parent ) ) )  
-    ;; the toplevel element (list) for which
-    ;; the event element is one of the descendant
-     ( ancestor ( find-ancestor event-element ) ) 
+     ( siblings
+     ( if parent
+         ( xml-children parent ) ) )
+      ;; the toplevel element (list) for which
+      ;; the event element is one of the descendant
+       ( ancestor ( find-ancestor event-element ) ) 
     ;; the position of the event element among siblings
-     ( pos ( if parent ( position event-element siblings ) 0 ) ) 
-    ;; the xml to be returned as the answer to the editing event
-     ( ret ( jquery-1 "#bottomstatus" "html" operation ) ) )
+     ( pos
+     ( if parent
+         ( position event-element siblings )
+         0 ) )
+     ;; the xml to be returned as the answer to the editing event
+      ( ret ( jquery-1 "#bottomstatus" "html" operation ) ) )
    ( declare ( ignore dummy ) ) 
    ;; if the operation is not allowed return
     ( unless ( find operation +allowed-edit-operation+ :test #'string-equal )
@@ -364,12 +388,13 @@ The xml has the example form:
    ;; to colour newly edited elements
    ;(remove-editing-class ancestor )
    ;; if :cancel, set the focus in the same element
-    ( if ( string-equal operation :cancel ) ( set-as-focus-element event-element ) ) 
+    ( if ( string-equal operation :cancel )
+       ( set-as-focus-element event-element ) )
+   
    ;; if collapsing or expanding, set next focus on the top level element
-    ( if
-    ( find operation '( :collapse :collapseall :expand :expandall ) :test
-          #'string-equal )
-    ( set-as-focus-element ancestor ) )
+    ( if ( find operation '( :collapse :collapseall :expand :expandall ) :test
+             #'string-equal )
+       ( set-as-focus-element ancestor ) )
    
    ;; transposition of the layout {vertical, horizontal}
     ( when ( string-equal operation :transpose )
@@ -380,7 +405,8 @@ The xml has the example form:
     ( when ( string-equal operation :comment )
      ( let ( ( comment-atom ( comment-element event-element parent pos ) ) )
        ( set-as-focus-element comment-atom )
-       ( if ( eq ancestor event-element ) 
+       ( if ( eq ancestor event-element )
+           
            ;; sets the comment-atom as the top level replacement for event-element
             ( setf editing-nodes
                    ( substitute comment-atom event-element editing-nodes ) ) ) ) )
@@ -418,7 +444,8 @@ The xml has the example form:
    ;; when cut or copy place the element in memory
     ( when ( find operation '( :copy :cut ) :test #'string-equal )
      ( setf *EDIT-MEMORY* ( xml-copy event-element ) )
-     ( if ( string-equal :copy operation ) ( set-as-focus-element event-element ) ) )
+     ( if ( string-equal :copy operation )
+         ( set-as-focus-element event-element ) ) )
    
    ;; delete or cut removes the element
     ( when ( find operation '( :delete :cut ) :test #'string-equal )
@@ -431,7 +458,9 @@ The xml has the example form:
        ( set-id-all-family memory )
        ( setf ( xml-parent memory ) parent )
        ( set-as-focus-element memory )
-       ( if parent ( setf ( nth pos ( xml-children parent ) ) memory ) 
+       ( if parent
+           ( setf ( nth pos ( xml-children parent ) ) memory )
+           
            ;;else
             ( progn
             ( setf ancestor memory )
@@ -500,11 +529,15 @@ The xml has the example form:
      ( setf track ( navigate event-element parent editing-nodes operation ) ) )
    
    ;; update pfile-xml with the new nodes
-    ( if ( find operation '( :undo :redo ) :test #'string-equal )   
+    ( if ( find operation '( :undo :redo ) :test #'string-equal )
+       
+       
+       
        ;; undo redo dont need pointer update
        ;; only the update of current file
        ;; because the pointer was already changed
-        ( progn ( setf ( pfile-xml pfile ) editing-nodes ) ) 
+        ( progn ( setf ( pfile-xml pfile ) editing-nodes ) )
+       
        ;; other than undo redo
         ( pfile-update-current-nodes pfile editing-nodes
         ( list :undo event-element-copy :redo track ) operation ) )
