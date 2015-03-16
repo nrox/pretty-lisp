@@ -39,7 +39,7 @@ Copyright (c) 2012, Nuno Rocha.  All rights reserved.
 */
 
 /** single xml requests are send to this post uri */
-var REQUEST_XML_URL = "/ExchangeXML"; 
+var REQUEST_XML_URL = "ExchangeXML"; 
 
 var ALLOW_DEBUG = true; 
 function alertError (msg) {

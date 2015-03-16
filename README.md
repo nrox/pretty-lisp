@@ -2,13 +2,15 @@
 
 Programming toy to edit Common Lisp code in the browser, where parenthesis are transformed into "pretty" svg boxes.
 
+## Online demo
+
+[pretty-lisp demo](https://assemblino.com/pretty-lisp/)
+
 ## Current state
 
 Tested on Linux with SBCL, probably runs with other implementations. Might run on Mac OS as well. 
 
 The interface uses Chrome browser. It's not working with Firefox.
-
-Some features are broken.
 
 ## Getting started
 
