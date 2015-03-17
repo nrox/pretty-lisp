@@ -11,9 +11,8 @@ Click the _pretty-lisp editor_ button then open tutorial.lisp or other available
 
 ## Current state
 
-Tested on Linux with SBCL, probably runs with other implementations. Might run on Mac OS as well. 
-
-The interface uses Chrome browser. It's not working with Firefox.
+Backend tested on Linux with SBCL, probably runs with other implementations. Might run on Mac OS as well. Frontend
+was tested with last versions (March 2015) of Firefox, Chrome and Safari. 
 
 ## Getting started
 
